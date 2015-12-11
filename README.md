@@ -1,2 +1,2 @@
 # viridis
-description of the projec
+Tools for quantifying gene expression in diatoms.
