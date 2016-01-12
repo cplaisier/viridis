@@ -66,6 +66,11 @@ numberOfThreads=12
 
 # 1. defining the BAM and abundance files
 roots=os.listdir(bamFilesDir)
+
+###
+roots.remove('secondRun')
+###
+
 bamFiles=[bamFilesDir+element+'/Aligned.sortedByCoord.out.bam' for element in roots]
 abundanceFiles=[cufflinksDir+element+'/abundances.cxb' for element in roots]
 labels=[element.split('_')[-1] for element in roots]
