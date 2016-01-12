@@ -62,8 +62,8 @@ def STARcalling(inputFile):
     return None
 
 # 0. defining several input/output paths
-readsFilesDir='/proj/omics4tb/alomana/projects/dtp/data/reads/tippingPoints/cleanReads/'
-bamFilesDir='/proj/omics4tb/alomana/projects/dtp/data/reads/tippingPoints/bamFiles/'
+readsFilesDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cleanReads/secondRun/'
+bamFilesDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/bamFiles/secondRun/'
 STARexecutable='/proj/omics4tb/alomana/software/STAR-master/bin/Linux_x86_64/STAR'
 genomeIndexDir='/proj/omics4tb/alomana/projects/dtp/data/genomeIndex'
 genomeFastaFile='/proj/omics4tb/alomana/projects/dtp/data/ensembl/Thalassiosira_pseudonana.ASM14940v1.29.dna.genome.fa'
