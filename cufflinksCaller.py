@@ -9,10 +9,10 @@ def cuffnormCaller():
     outputDir=cufflinksDir+'allSamples'
 
     ### removing sample S77 because the sequencing failed
-    badTag='S77'
-    badApple=[element for element in abundanceFiles if badTag in element][0]
-    abundanceFiles.remove(badApple)
-    labels.remove(badTag)
+    #badTag='S77'
+    #badApple=[element for element in abundanceFiles if badTag in element][0]
+    #abundanceFiles.remove(badApple)
+    #labels.remove(badTag)
     ### end
     
     term1='cuffnorm %s '%(gtfFile)
@@ -58,8 +58,8 @@ def cuffquantCaller(inputFile):
     return None
 
 # 0. defining input files
-bamFilesDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/bamFiles/'
-cufflinksDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/'
+bamFilesDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/bamFiles/secondRun/'
+cufflinksDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/secondRun/'
 gtfFile='/proj/omics4tb/alomana/projects/dtp/data/ensembl/Thalassiosira_pseudonana.ASM14940v1.29.gff3'
 maskFile='/proj/omics4tb/alomana/projects/dtp/data/ensembl/mask.gff3'
 numberOfThreads=12
