@@ -58,8 +58,8 @@ def cuffquantCaller(inputFile):
     return None
 
 # 0. defining input files
-bamFilesDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/bamFiles/secondRun/'
-cufflinksDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/secondRun/'
+bamFilesDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/bamFiles/'
+cufflinksDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/'
 gtfFile='/proj/omics4tb/alomana/projects/dtp/data/ensembl/Thalassiosira_pseudonana.ASM14940v1.29.gff3'
 maskFile='/proj/omics4tb/alomana/projects/dtp/data/ensembl/mask.gff3'
 numberOfThreads=12
