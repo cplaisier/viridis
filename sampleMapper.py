@@ -2,16 +2,19 @@
 import sys,numpy,matplotlib
 from matplotlib import pyplot
 
-def boxPlotGrapher(classifiers,flag):
+def boxPlotGrapher(classifiers,borders,flag):
 
     '''
     this function plots the expression of the classifiers in log10 scale using boxplots
     '''
 
+    # 0. defining a variable for recapitulating the data borders necessary for mapping samples into new space
+    borders[flag]={}
+    
     # 1. defining the expression values
     if flag == 'light':
         expressionA=expressionRetriever(classifiers,flag,'AM')
-        expressionB=expressionRetriever(classifiers,flag,'PM')
+        expressionB=expressionRetriever(classifiers,flag,'PM')        
     elif flag == 'growth':
         expressionA=expressionRetriever(classifiers,flag,'exp')
         expressionB=expressionRetriever(classifiers,flag,'sta')
@@ -19,11 +22,13 @@ def boxPlotGrapher(classifiers,flag):
         print 'error handling flags from boxPlotGrapher'
         sys.exit()
 
-    # 3. plotting
+    # 3. plotting and recovering the info for the mapping samples
     boxPlotPosition=0
     listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True)# ranking the classifiers
     for geneID in listOfClassifiers: 
         boxPlotPosition=boxPlotPosition+1
+        borders[flag][geneID]={}
+        
         # 3.1 transforming into log10 scale
         x=numpy.array(expressionA[geneID])
         y=numpy.array(expressionB[geneID])
@@ -38,7 +43,24 @@ def boxPlotGrapher(classifiers,flag):
         bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
         setBoxColors(bp,'orange')
         bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-        setBoxColors(bp,'green')
+        setBoxColors(bp,'darkgreen')
+
+        # 3.3. saving the info for the mapping samples
+        xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx)
+        ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy)
+        if xb > yb:
+            center=((xa-yc)/2.)+yc
+        else:
+            center=((ya-xc)/2.)+xc
+        # incorporating the data
+        w=weightCalculator(geneID,listOfClassifiers)
+        if flag == 'light':
+            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w]
+        elif flag == 'growth':
+            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w]
+        else:
+            print 'error handling flags from boxPlotGrapher (bis)'
+            sys.exit()
         
     # 3.3. closing the figure
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
@@ -51,7 +73,7 @@ def boxPlotGrapher(classifiers,flag):
     matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
     matplotlib.pyplot.clf()
 
-    return None
+    return borders
 
 def classifiersFilter(classifiers,flag):
 
@@ -148,6 +170,118 @@ def expressionReader():
 
     return expression
 
+def loadCalculator(sampleID,flag):
+
+    '''
+    this function computes the value of the sample in the new axis 
+    '''
+
+    averageLoad=0.
+    
+    for classifier in borders[flag].keys():
+        s=numpy.log10(expression[classifier][sampleID]+1.) # sample expression level
+
+        a=borders[flag][classifier][0] # min of positive
+        b=borders[flag][classifier][1] # median of positive
+        c=borders[flag][classifier][2] # max of positive
+
+        d=borders[flag][classifier][3] # min of negative
+        e=borders[flag][classifier][4] # median of negative
+        f=borders[flag][classifier][5] # max of negative
+
+        NML=borders[flag][classifier][6] # No Man's Land
+        w=borders[flag][classifier][7] # weight
+        
+        # differentiate if it's positive (AM,exp) or negative (PM,sta) or missregulated
+        positive=None
+        missR=None
+        if b > e:
+            if s > NML:
+                positive=True
+            else:
+                positive=False
+            if s < a and s > f:
+                missR=True
+            else:
+                missR=False
+        if e > b:
+            if s > NML:
+                positive=False
+            else:
+                positive=True
+            if s < d and s > c:
+                missR=True
+            else:
+                missR=False
+
+        # proper calculation
+        print classifier,s,'\t',a,b,c,d,e,f,'\t',NML,w,'\t',positive,missR
+        
+        # working with the miss regulated samples
+        if missR == True:
+            if b > e:
+                if s > NML:
+                    stretch=a-NML
+                    value=(s-NML)/stretch
+                else:
+                    stretch=NML-f
+                    value=-(s-f)/stretch
+            else:
+                if s > NML:
+                    stretch=d-NML
+                    value=-(s-NML)/stretch
+                else:
+                    stretch=NML-c
+                    value=(s-c)/stretch
+        # dealing with values within previously observed
+        else:
+            if positive == True: # it is a light sample
+                # assuming light boxplot is above
+                if b > e:
+                    if s > b:
+                        stretch=c-b
+                        value=1.5+(0.5*(s-b))/stretch
+                    else:
+                        stretch=b-a
+                        value=1.+(0.5*(s-a))/stretch
+                # assuming light boxplot is below
+                else:
+                    if s > b:
+                        stretch=c-b
+                        value=1.5-(0.5*(s-b))/stretch
+                    else:
+                        stretch=b-a
+                        if stretch != 0.:
+                            value=1.5+(0.5*(b-s))/stretch
+                        else:
+                            value=2.
+            else: # it is a dark sample
+                # assuming light boxtplot is above
+                if b > e:
+                    if s > e:
+                        stretch=f-e
+                        value=-1.5+(0.5*(s-e))/stretch
+                    else:
+                        stretch=e-d
+                        value=-1.5-(0.5*(e-s))/stretch
+                # assuming light boxplot is below
+                else:
+                    if s > e:
+                        stretch=f-e
+                        value=-1.5-(0.5*(s-e))/stretch
+                    else:
+                        stretch=e-d
+                        value=-1.5+(0.5*(e-s))/stretch
+
+        # weighting the value
+        value=value*w
+        averageLoad=averageLoad+value
+
+    print averageLoad 
+    print
+
+    return averageLoad
+
 def expressionRetriever(classifiers,flag,condition):
 
     '''
@@ -200,16 +334,66 @@ def metadataReader():
 
     return metaData
 
-def newSpaceMapper(sampleID):
+def newCoordinateCalculator(sampleID):
 
     '''
-    this function returns a sample into the new space coordinates
+    this function computes the new coordinates of a sample given the borders calculated from the filtered classifiers
     '''
 
-    x=numpy.random.random()
-    y=numpy.random.random()
-
+    x=loadCalculator(sampleID,'light')
+    y=loadCalculator(sampleID,'growth')
+    
     return x,y
+
+def newSpaceMapper():
+
+    '''
+    this function plots the samples into a new space
+    '''
+    
+    for sampleID in metaData.keys():
+        
+        x,y=newCoordinateCalculator(sampleID)
+
+        # defining the size and alpha depending on the epoch
+        if metaData[sampleID]['epoch'] == 2:
+            theSize=10.
+            theAlpha=1.
+            print '***',x,y
+        else:
+            theSize=5.
+            theAlpha=.5
+
+        # defining the color depending on the light/dark
+        if metaData[sampleID]['light'] == 'AM':
+            theColor='orange'
+        elif metaData[sampleID]['light'] == 'PM':
+            theColor='darkgreen'
+        else:
+            print 'error while defining the color from main'
+            sys.exit()
+
+        # defining the marker type depending on exp/sta
+        if metaData[sampleID]['growth'] == 'exp':
+            theMarker='o'
+        elif metaData[sampleID]['growth'] == 'sta':
+            theMarker='s'
+        else:
+            print 'error while defining the marker from main'
+            sys.exit()
+    
+        matplotlib.pyplot.plot(x,y,marker=theMarker,mew=0,color=theColor,ms=theSize,alpha=theAlpha)
+
+    # finishing the figure
+    matplotlib.pyplot.xlim([-2.5,2.5])
+    matplotlib.pyplot.ylim([-2.5,2.5])
+    matplotlib.pyplot.xlabel('dark/light')
+    matplotlib.pyplot.ylabel('stationary/exponential')
+    matplotlib.pyplot.tight_layout(pad=0.5)
+    matplotlib.pyplot.savefig('sampleLocation.pdf')
+
+    
+    return None
 
 def setBoxColors(bp,theColor):
 
@@ -224,6 +408,18 @@ def setBoxColors(bp,theColor):
     matplotlib.pyplot.setp(bp['medians'],color=theColor)    
 
     return None
+
+def weightCalculator(sampleID,classifiers):
+
+    '''
+    this function computes the weight of the classifier based on its rank
+    '''
+
+    inverseRank=len(classifiers)-classifiers.index(sampleID)
+    sumOfRanks=sum(numpy.arange(1.,len(classifiers)+1.))
+    weight=float(inverseRank)/sumOfRanks
+
+    return weight
 
 ### MAIN
 
@@ -258,18 +454,13 @@ print len(growthFilteredClassifiers),'filtered growth classifiers.'
 
 # 1.3. plotting a boxplots of the best classifiers
 print 'plotting expression graphs for classifiers...'
-boxPlotGrapher(lightFilteredClassifiers,'light')
-boxPlotGrapher(growthFilteredClassifiers,'growth')
+borders={}
+borders=boxPlotGrapher(lightFilteredClassifiers,borders,'light')
+borders=boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
 
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
 print 'mapping samples into new space...'
-for sampleID in metaData.keys():
-    x,y=newSpaceMapper(sampleID)
-    matplotlib.pyplot.plot(x,y,'ok')
-    matplotlib.pyplot.tight_layout(pad=0.5)
-    matplotlib.pyplot.savefig('sampleLocation.pdf')
-    matplotlib.pyplot.clf()
-    #if metaData[sampleID]['epoch'] == 2:
+newSpaceMapper()
 
 # 3. final message
 print '... analysis completed.'
