@@ -24,7 +24,7 @@ def boxPlotGrapher(classifiers,borders,flag):
 
     # 3. plotting and recovering the info for the mapping samples
     boxPlotPosition=0
-    listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True)# ranking the classifiers
+    listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True) # ranking the classifiers
     for geneID in listOfClassifiers: 
         boxPlotPosition=boxPlotPosition+1
         borders[flag][geneID]={}
@@ -53,7 +53,8 @@ def boxPlotGrapher(classifiers,borders,flag):
         else:
             center=((ya-xc)/2.)+xc
         # incorporating the data
-        w=weightCalculator(geneID,listOfClassifiers)
+        #w=weightRankCalculator(geneID,listOfClassifiers)
+        w=weightNMLCalculator(geneID,flag)
         if flag == 'light':
             borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w]
         elif flag == 'growth':
@@ -214,8 +215,8 @@ def loadCalculator(sampleID,flag):
             else:
                 missR=False
 
-        # proper calculation
-        print classifier,s,'\t',a,b,c,d,e,f,'\t',NML,w,'\t',positive,missR
+        #! verbose option
+        #! print classifier,s,'\t',a,b,c,d,e,f,'\t',NML,w,'\t',positive,missR
         
         # working with the miss regulated samples
         if missR == True:
@@ -277,8 +278,8 @@ def loadCalculator(sampleID,flag):
         value=value*w
         averageLoad=averageLoad+value
 
-    print averageLoad 
-    print
+    #! print averageLoad 
+    #! print
 
     return averageLoad
 
@@ -359,7 +360,6 @@ def newSpaceMapper():
         if metaData[sampleID]['epoch'] == 2:
             theSize=10.
             theAlpha=1.
-            print '***',x,y
         else:
             theSize=5.
             theAlpha=.5
@@ -383,6 +383,23 @@ def newSpaceMapper():
             sys.exit()
     
         matplotlib.pyplot.plot(x,y,marker=theMarker,mew=0,color=theColor,ms=theSize,alpha=theAlpha)
+
+        # plotting the names of the concerning samples
+        if metaData[sampleID]['epoch'] == 2:
+            if metaData[sampleID]['light'] == 'PM' and metaData[sampleID]['growth'] == 'exp':
+                if metaData[sampleID]['replicate'] == 'A':
+                    theMarker='$A.exp.PM$'
+                if metaData[sampleID]['replicate'] == 'C':
+                    theMarker='$C.exp.PM$'
+                matplotlib.pyplot.plot(x,y+0.15,color='black',marker=theMarker,ms=50)
+
+            if metaData[sampleID]['light'] == 'AM' and metaData[sampleID]['growth'] == 'sta':
+                if metaData[sampleID]['replicate'] == 'A':
+                    theMarker='$A.sta.AM$'
+                if metaData[sampleID]['replicate'] == 'C':
+                    theMarker='$C.sta.AM$'
+                matplotlib.pyplot.plot(x,y+0.15,color='black',marker=theMarker,ms=50)
+                
 
     # finishing the figure
     matplotlib.pyplot.xlim([-2.5,2.5])
@@ -409,13 +426,30 @@ def setBoxColors(bp,theColor):
 
     return None
 
-def weightCalculator(sampleID,classifiers):
+def weightNMLCalculator(geneID,flag):
+
+    '''
+    this function computes the weight of the classifier based on the empty space between the classifiers
+    '''
+
+    if flag == 'light':
+        sumSpaces=sum(lightFilteredClassifiers.values())
+        value=lightFilteredClassifiers[geneID]
+    elif flag == 'growth':
+        sumSpaces=sum(growthFilteredClassifiers.values())
+        value=growthFilteredClassifiers[geneID]
+
+    weight=value/sumSpaces
+
+    return weight
+
+def weightRankCalculator(geneID,classifiers):
 
     '''
     this function computes the weight of the classifier based on its rank
     '''
 
-    inverseRank=len(classifiers)-classifiers.index(sampleID)
+    inverseRank=len(classifiers)-classifiers.index(geneID)
     sumOfRanks=sum(numpy.arange(1.,len(classifiers)+1.))
     weight=float(inverseRank)/sumOfRanks
 
