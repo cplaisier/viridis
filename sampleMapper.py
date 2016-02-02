@@ -1,4 +1,4 @@
-### this script locates epoch 2 samples into a light vs. growth space
+### this script locates epoch 2 samples into a light vs. growth space 
 import sys,numpy,matplotlib
 from matplotlib import pyplot
 
