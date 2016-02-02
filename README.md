@@ -14,7 +14,5 @@ The natural analysis would follow as:
 4.2. pcaGrapher.py: script to compute the PCA on expression values in FPKM.  
 4.3. sampleMapper.py: script to discriminate samples in the light-growth space.
 
-5. logValuesMatrixCreator.py: script to transform absolute (FPKM) into relative expression (log2 fold change).
-
-s
+logValuesMatrixCreator.py: script to transform absolute (FPKM) into relative expression (log2 fold change).
 
