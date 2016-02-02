@@ -3,10 +3,10 @@ Tools for quantifying gene expression in diatoms.
     
 The natural analysis would follow as:   
 
-# cleaning reads
+## cleaning reads
 1. readsCleaner.py: script to call Trimmomatic and clean the reads.
 
-# mapping reads
+### mapping reads
 2. readsMapper.py: script to call STAR and map the reads to the genome.
 
 # quantifying reads (counts)
