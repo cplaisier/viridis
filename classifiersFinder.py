@@ -1,4 +1,4 @@
-### this script finds the DETs specifically for light/dark and exponential/stationary phases
+### this script finds the DETs specifically for light/dark and exponential/stationary phases 
 import os,sys
 
 # 0. defining some variables
