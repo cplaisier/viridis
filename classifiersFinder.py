@@ -1,4 +1,4 @@
-### this script finds the DETs specifically for light/dark and exponential/stationary phases 
+### this script finds the DETs specifically for light/dark and exponential/stationary phases. Script to be run in osiris.
 import os,sys
 
 # 0. defining some variables
@@ -37,7 +37,8 @@ exponentialSamples=[]
 stationarySamples=[]
 
 for sampleID in metaData:
-    if metaData[sampleID]['epoch'] != 2:
+    #if metaData[sampleID]['epoch'] != 2: #! robust classifiers
+    if metaData[sampleID]['epoch'] == 0:
         # 1.1. select light/dark samples
         if metaData[sampleID]['light'] == 'AM':
             lightSamples.append(sampleID)
@@ -67,7 +68,8 @@ paths=os.listdir(cufflinksDir)
 cxbPaths=[cufflinksDir+path+'/abundances.cxb' for path in paths]
 
 # 3.1 running cuffdiff for light/dark samples
-term2='-o %s/light '%outputDir
+#term2='-o %s/light '%outputDir #! for robust classifiers
+term2='-o %s/light_epoch0 '%outputDir
 
 pathsA=[]
 pathsB=[]
@@ -90,7 +92,8 @@ print
 os.system(cmd)
 
 # 3.2 running cuffdiff for exp/sta samples
-term2='-o %s/growth '%outputDir
+#term2='-o %s/growth '%outputDir #! for robust classifiers
+term2='-o %s/growth_epoch0 '%outputDir
 
 pathsA=[]
 pathsB=[]

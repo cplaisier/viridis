@@ -79,7 +79,7 @@ def boxPlotGrapher(classifiers,borders,flag):
 def classifiersFilter(classifiers,flag):
 
     '''
-    this function selects the classifiers that have at least 0.1 separation between max and min values into the two cases in log space
+    this function selects the classifiers that have at least separation between max and min values into the two cases in log space
     '''
     
     # 1. defining the expression values
