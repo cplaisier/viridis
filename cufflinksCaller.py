@@ -8,13 +8,6 @@ def cuffnormCaller():
 
     outputDir=cufflinksDir+'allSamples'
 
-    ### removing sample S77 because the sequencing failed
-    #badTag='S77'
-    #badApple=[element for element in abundanceFiles if badTag in element][0]
-    #abundanceFiles.remove(badApple)
-    #labels.remove(badTag)
-    ### end
-    
     term1='cuffnorm %s '%(gtfFile)
     term2=' '.join(abundanceFiles)+' '
     term3='-o %s '%outputDir
@@ -76,13 +69,10 @@ abundanceFiles=[cufflinksDir+element+'/abundances.cxb' for element in roots]
 labels=[element.split('_')[-1] for element in roots]
 
 # 2. calling cuffquantCaller 
-#print 'calling cuffquant...'
-#for inputFile in bamFiles:
-#    cuffquantCaller(inputFile)
+print 'calling cuffquant...'
+for inputFile in bamFiles:
+    cuffquantCaller(inputFile)
 
 # 3. calling cuffnorm
 print 'calling cuffnorm...'
 cuffnormCaller()
-
-# 4. calling cuffdiff
-
