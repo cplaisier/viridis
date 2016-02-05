@@ -1,0 +1,556 @@
+### this script locates all epochs samples into a light vs. growth space characterized in epoch=0
+
+import sys,numpy,matplotlib
+from matplotlib import pyplot
+from matplotlib.patches import Ellipse
+
+def boxPlotGrapher(classifiers,borders,flag):
+
+    '''
+    this function plots the expression of the classifiers in log10 scale using boxplots
+    '''
+
+    # 0. defining a variable for recapitulating the data borders necessary for mapping samples into new space
+    borders[flag]={}
+    
+    # 1. defining the expression values
+    if flag == 'light':
+        expressionA=expressionRetriever(classifiers,flag,'AM')
+        expressionB=expressionRetriever(classifiers,flag,'PM')        
+    elif flag == 'growth':
+        expressionA=expressionRetriever(classifiers,flag,'exp')
+        expressionB=expressionRetriever(classifiers,flag,'sta')
+    else:
+        print 'error handling flags from boxPlotGrapher'
+        sys.exit()
+
+    # 3. plotting and recovering the info for the mapping samples
+    boxPlotPosition=0
+    listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True) # ranking the classifiers
+    for geneID in listOfClassifiers: 
+        boxPlotPosition=boxPlotPosition+1
+        borders[flag][geneID]={}
+        
+        # 3.1 transforming into log10 scale
+        x=numpy.array(expressionA[geneID])
+        y=numpy.array(expressionB[geneID])
+
+        x=x+1.
+        y=y+1.
+
+        logx=numpy.log10(x)
+        logy=numpy.log10(y)
+
+        # 3.2. actual plotting
+        #! bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
+        #! setBoxColors(bp,'orange')
+        #! bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
+        #! setBoxColors(bp,'darkgreen')
+
+        # 3.3. saving the info for the mapping samples
+        xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
+        ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy); sdy=numpy.std(logy)
+        if xb > yb:
+            center=((xa-yc)/2.)+yc
+        else:
+            center=((ya-xc)/2.)+xc
+        # incorporating the data
+        #! w=weightRankCalculator(geneID,listOfClassifiers)
+        w=weightNMLCalculator(geneID,flag)
+        if flag == 'light':
+            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
+        elif flag == 'growth':
+            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
+        else:
+            print 'error handling flags from boxPlotGrapher (bis)'
+            sys.exit()
+        
+    # 3.3. closing the figure
+    #! matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+    #! matplotlib.pyplot.ylim([-0.2,5.])
+    #! theXticks=range(boxPlotPosition)
+    #! theXticksPosition=[element+1 for element in theXticks]
+    #! matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=2)
+    #! matplotlib.pyplot.ylabel('log10 FPKM')
+    #! matplotlib.pyplot.tight_layout(pad=0.5)
+    #! matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
+    #! matplotlib.pyplot.clf()
+
+    return borders
+
+def classifiersFilter(classifiers,flag):
+
+    '''
+    this function selects the classifiers that have at least separation between max and min values into the two cases in log space
+    '''
+    
+    # 1. defining the expression values
+    if flag == 'light':
+        selectedExpressionA=expressionRetriever(classifiers,flag,'AM')
+        selectedExpressionB=expressionRetriever(classifiers,flag,'PM')
+    elif flag == 'growth':
+        selectedExpressionA=expressionRetriever(classifiers,flag,'exp')
+        selectedExpressionB=expressionRetriever(classifiers,flag,'sta')
+    else:
+        print 'error handling flags from boxPlotGrapher'
+        sys.exit()
+
+    # 2. computing the distances
+    separations={}
+    for geneID in classifiers: 
+        
+        # 2.1 transforming into log10 scale
+        x=numpy.array(selectedExpressionA[geneID])
+        y=numpy.array(selectedExpressionB[geneID])
+
+        x=x+1.
+        y=y+1.
+
+        logx=numpy.log10(x)
+        logy=numpy.log10(y)
+
+        # defining the separation
+        if numpy.mean(logx) > numpy.mean(logy):
+            separation=numpy.min(logx)-numpy.max(logy)
+        elif numpy.mean(logy) > numpy.mean(logx):
+            separation=numpy.min(logy)-numpy.max(logx)
+        else:
+            print 'error computing the separation between the two distributions from classifiersFilter'
+            sys.exit()
+        if separation > 0.:
+            separations[geneID]=separation
+
+    return separations
+
+def classifiersRetriever(flag):
+
+    '''
+    this function reads the output of cuffdiff and select the genes that pass the following rule: 1. log2 fold > 1., and 2. statistical significance
+    '''
+
+    classifiersFolds={}
+    classifiersSignificances={}
+    
+    inputFile=cuffdiffDir+'%s/gene_exp.diff'%flag
+    with open(inputFile,'r') as f:
+        f.next()
+        for line in f:
+            vector=line.split('\t')
+            geneName=vector[0]
+            significance=vector[-1].replace('\n','')
+            foldChange=abs(float(vector[-5]))
+            qValue=float(vector[-2])
+            if significance == 'yes' and foldChange > 1.: # the selection rule is log2 fold > 1.0 and statistically different
+                classifiersFolds[geneName]=foldChange
+                classifiersSignificances[geneName]=qValue
+    # sorting classifiers
+    listOfClassifiers=sorted(classifiersFolds,key=classifiersFolds.__getitem__,reverse=True)
+
+    return listOfClassifiers
+
+def classifiersWriter(selected,flag):
+
+    if flag == 'light':
+        f=open('epoch0_lightDescriptors_AM_ranked.txt','w')
+        g=open('epoch0_lightDescriptors_PM_ranked.txt','w')
+    elif flag == 'growth':
+        f=open('epoch0_growthDescriptors_exp_ranked.txt','w')
+        g=open('epoch0_growthDescriptors_sta_ranked.txt','w')
+
+    sortedList=sorted(selected,key=selected.__getitem__,reverse=True)
+    for element in sortedList:
+        m=borders[flag][element][1]
+        n=borders[flag][element][4]
+        if m > n:
+            f.write('%s\n'%element)
+        else:
+            g.write('%s\n'%element)
+
+    f.close()
+    g.close()
+
+    return None
+
+def ellipseSizeCalculator(phase1,phase2):
+
+    '''
+    this function calculates size of ellipsoids
+    '''
+
+    return 1,1
+
+def expressionReader():
+
+    '''
+    this function reads the matrix of expression in FPKM into the format of a dictionary
+    '''
+
+    expression={}
+    with open(expressionFile,'r') as f:
+        header=f.readline()
+        prelabels=header.split('\t')[1:]
+        labels=[element.split('_')[0] for element in prelabels]
+        f.next()
+        for line in f:
+            vector=line.split('\t')
+
+            geneName=vector[0]
+            expression[geneName]={}
+            
+            preValues=vector[1:]
+            values=[float(element) for element in preValues]
+            for i in range(len(values)):
+                expression[geneName][labels[i]]=values[i]
+
+    return expression
+
+def loadCalculator(sampleID,flag):
+
+    '''
+    this function computes the value of the sample in the new axis 
+    '''
+
+    averageLoad=0.
+    
+    for classifier in borders[flag].keys():
+        s=numpy.log10(expression[classifier][sampleID]+1.) # sample expression level
+
+        a=borders[flag][classifier][0] # min of positive
+        b=borders[flag][classifier][1] # median of positive
+        c=borders[flag][classifier][2] # max of positive
+
+        d=borders[flag][classifier][3] # min of negative
+        e=borders[flag][classifier][4] # median of negative
+        f=borders[flag][classifier][5] # max of negative
+
+        NML=borders[flag][classifier][6] # No Man's Land
+        w=borders[flag][classifier][7] # weight
+        
+        # differentiate if it's positive (AM,exp) or negative (PM,sta) or miss-regulated
+        positive=None
+        missR=None
+        if b > e:
+            if s > NML:
+                positive=True
+            else:
+                positive=False
+            if s < a and s > f:
+                missR=True
+            else:
+                missR=False
+        if e > b:
+            if s > NML:
+                positive=False
+            else:
+                positive=True
+            if s < d and s > c:
+                missR=True
+            else:
+                missR=False
+
+        #! verbose option
+        #! print classifier,s,'\t',a,b,c,d,e,f,'\t',NML,w,'\t',positive,missR
+        
+        # working with the miss regulated samples
+        if missR == True:
+            if b > e:
+                if s > NML:
+                    stretch=a-NML
+                    value=(s-NML)/stretch
+                else:
+                    stretch=NML-f
+                    value=-(s-f)/stretch
+            else:
+                if s > NML:
+                    stretch=d-NML
+                    value=-(s-NML)/stretch
+                else:
+                    stretch=NML-c
+                    value=(s-c)/stretch
+        # dealing with values within previously observed
+        else:
+            if positive == True: # it is a light sample
+                # assuming light boxplot is above
+                if b > e:
+                    if s > b:
+                        stretch=c-b
+                        value=1.5+(0.5*(s-b))/stretch
+                    else:
+                        stretch=b-a
+                        value=1.+(0.5*(s-a))/stretch
+                # assuming light boxplot is below
+                else:
+                    if s > b:
+                        stretch=c-b
+                        value=1.5-(0.5*(s-b))/stretch
+                    else:
+                        stretch=b-a
+                        if stretch != 0.:
+                            value=1.5+(0.5*(b-s))/stretch
+                        else:
+                            value=2.
+            else: # it is a dark sample
+                # assuming light boxtplot is above
+                if b > e:
+                    if s > e:
+                        stretch=f-e
+                        value=-1.5+(0.5*(s-e))/stretch
+                    else:
+                        stretch=e-d
+                        value=-1.5-(0.5*(e-s))/stretch
+                # assuming light boxplot is below
+                else:
+                    if s > e:
+                        stretch=f-e
+                        value=-1.5-(0.5*(s-e))/stretch
+                    else:
+                        stretch=e-d
+                        value=-1.5+(0.5*(e-s))/stretch
+
+        # weighting the value
+        value=value*w
+        averageLoad=averageLoad+value
+
+    #! print averageLoad 
+    #! print
+
+    return averageLoad
+
+def expressionRetriever(classifiers,flag,condition):
+
+    '''
+    this function returns the expression values for a set of genes under a specific condition
+    '''
+
+    # 1. selecting the acceptable samples
+    selectedSamples=[]
+    for sampleID in metaData.keys():
+        if metaData[sampleID]['epoch'] == 0:
+            if metaData[sampleID][flag] == condition:
+                selectedSamples.append(sampleID)
+                
+    # 2. defining the expression values
+    selectedExpression={}
+    for geneName in classifiers:
+        selectedExpression[geneName]=[]
+        for sampleID in selectedSamples:
+            value=expression[geneName][sampleID]
+            selectedExpression[geneName].append(value)
+
+    return selectedExpression
+
+def metadataReader():
+
+    '''
+    this function returns a dictionary with the metadata of the expression data
+    '''
+    
+    metaData={}
+
+    with open(metaDataFile,'r') as f:
+        f.next()
+        for line in f:
+            vector=line.split('\t')
+            if vector[4] != '':
+
+                sampleID=vector[6]
+                if vector[0] != '':
+                    epoch=int(vector[0])
+                growth=vector[1]
+                light=vector[2]
+                co2=int(vector[3].replace(',',''))
+                replicate=vector[4]
+                preCollapse=bool(int(vector[5]))
+
+                metaData[sampleID]={}
+                metaData[sampleID]['growth']=growth
+                metaData[sampleID]['epoch']=epoch
+                metaData[sampleID]['light']=light
+                metaData[sampleID]['co2']=co2
+                metaData[sampleID]['replicate']=replicate
+                metaData[sampleID]['pre-collapse']=preCollapse
+
+    return metaData
+
+def newCoordinateCalculator(sampleID):
+
+    '''
+    this function computes the new coordinates of a sample given the borders calculated from the filtered classifiers
+    '''
+
+    x=-loadCalculator(sampleID,'light')
+    y=loadCalculator(sampleID,'growth')
+    
+    return x,y
+
+def newSpaceMapper(flag):
+
+    '''
+    this function plots the samples into a new space
+    '''
+
+    preselectedSamples=[sampleID for sampleID in metaData.keys() if metaData[sampleID]['co2'] == int(flag)]
+    print 'selected ', len(preselectedSamples), 'samples for plotting on ',flag, 'condition.'
+
+    # starting the figure
+    fig=matplotlib.pyplot.figure()
+    ax=fig.add_subplot(111)
+    
+    for sampleID in preselectedSamples:
+        
+        x,y=newCoordinateCalculator(sampleID)
+
+        theSize=8
+        theAlpha=.75
+
+        # defining the color depending on the light/dark
+        if metaData[sampleID]['light'] == 'AM':
+            theColor='orange'
+        elif metaData[sampleID]['light'] == 'PM':
+            theColor='darkgreen'
+        else:
+            print 'error while defining the color from main'
+            sys.exit()
+
+        # defining the marker type depending on epoch
+        if metaData[sampleID]['epoch'] == 0:
+            theMarker='o'
+        elif metaData[sampleID]['epoch'] == 1:
+            theMarker='s'
+        elif metaData[sampleID]['epoch'] == 2:
+            theMarker='^'
+        else:
+            print 'error while defining the marker from main'
+            sys.exit()
+
+        # defining the facecolor and markeredgecolor depending on exp/sta
+        if metaData[sampleID]['growth'] == 'exp':
+            theMFC='None'; theMEC=theColor
+        elif metaData[sampleID]['growth'] == 'sta':
+            theMFC=theColor; theMEC='None'
+        else:
+            print 'error while defining the marker from main'
+            sys.exit()
+    
+        ax.plot(x,y,marker=theMarker,mew=2,color=theColor,ms=theSize,alpha=theAlpha,mfc=theMFC,mec=theMEC)
+
+        # marking the pre-collapse samples
+        if metaData[sampleID]['pre-collapse'] == True and metaData[sampleID]['co2'] == 1000 and metaData[sampleID]['replicate'] == 'B':
+            ax.plot(x,y,marker='*',color='black',ms=3)
+
+    # plotting the ellipses
+    [ew,eh]=ellipseSizeCalculator('light','exp')
+    e=matplotlib.patches.Ellipse(xy=(1.5,1.5),width=ew,height=eh,edgecolor='darkgreen',fc='None',lw=1,alpha=1.,ls='--')
+    ax.add_patch(e)
+
+    [ew,eh]=ellipseSizeCalculator('light','sta')
+    e=matplotlib.patches.Ellipse(xy=(1.5,-1.5),width=ew,height=eh,edgecolor='darkgreen',fc='None',lw=1,alpha=1.,ls='--')
+    ax.add_patch(e)
+
+    # finishing the figure
+    matplotlib.pyplot.xlim([-2.,2.])
+    matplotlib.pyplot.ylim([-2.,2.])
+    matplotlib.pyplot.xticks([-1.5,1.5],['light','dark'])
+    matplotlib.pyplot.yticks([-1.5,1.5],['late','early'])
+    matplotlib.pyplot.xlabel('diurnal phase')
+    matplotlib.pyplot.ylabel('growth phase')
+    matplotlib.pyplot.tight_layout(pad=2.)
+    matplotlib.pyplot.title(flag+' ppm')
+    
+    matplotlib.pyplot.savefig('sampleLocation.%s.pdf'%(str(int(flag))))
+    matplotlib.pyplot.clf()
+
+    
+    return None
+
+def setBoxColors(bp,theColor):
+
+    '''
+    this function access the elements of a boxplot and colors them appropriately
+    '''
+
+    matplotlib.pyplot.setp(bp['boxes'],color=theColor)
+    matplotlib.pyplot.setp(bp['caps'],color=theColor)
+    matplotlib.pyplot.setp(bp['whiskers'],color=theColor,ls='-')
+    matplotlib.pyplot.setp(bp['fliers'],markeredgecolor=theColor,marker='+')
+    matplotlib.pyplot.setp(bp['medians'],color=theColor)    
+
+    return None
+
+def weightNMLCalculator(geneID,flag):
+
+    '''
+    this function computes the weight of the classifier based on the empty space between the classifiers
+    '''
+
+    if flag == 'light':
+        sumSpaces=sum(lightFilteredClassifiers.values())
+        value=lightFilteredClassifiers[geneID]
+    elif flag == 'growth':
+        sumSpaces=sum(growthFilteredClassifiers.values())
+        value=growthFilteredClassifiers[geneID]
+
+    weight=value/sumSpaces
+
+    return weight
+
+def weightRankCalculator(geneID,classifiers):
+
+    '''
+    this function computes the weight of the classifier based on its rank
+    '''
+
+    inverseRank=len(classifiers)-classifiers.index(geneID)
+    sumOfRanks=sum(numpy.arange(1.,len(classifiers)+1.))
+    weight=float(inverseRank)/sumOfRanks
+
+    return weight
+
+### MAIN
+
+# 0. preliminaries
+print 'initializing variables...'
+# 0.1. user defined variables and paths
+cuffdiffDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cuffdiff/'
+expressionFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/allSamples/genes.fpkm_table.v2.txt'
+metaDataFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/metadata/metadata.v2.tsv'
+
+# 0.2. reading metadata
+metaData=metadataReader()
+
+# 0.3. reading expression
+expression=expressionReader()
+
+# 1. recover the DET genes. Rank them on q-value and plot the boxplots. select the best ones.
+print 'recovering classifiers...'
+
+lightClassifiers=classifiersRetriever('light_epoch0')
+print len(lightClassifiers),'light classifiers detected.'
+
+growthClassifiers=classifiersRetriever('growth_epoch0')
+print len(growthClassifiers),'growth classifiers detected.'
+
+# 1.2. filtering the classifiers based on separation
+print 'filtering classifiers based on separation...'
+lightFilteredClassifiers=classifiersFilter(lightClassifiers,'light')
+growthFilteredClassifiers=classifiersFilter(growthClassifiers,'growth')
+print len(lightFilteredClassifiers),'filtered light classifiers.'
+print len(growthFilteredClassifiers),'filtered growth classifiers.'
+
+# 1.3. plotting a boxplots of the best classifiers
+print 'plotting expression graphs for classifiers...'
+borders={}
+borders=boxPlotGrapher(lightFilteredClassifiers,borders,'light')
+borders=boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
+
+classifiersWriter(lightFilteredClassifiers,'light')
+classifiersWriter(growthFilteredClassifiers,'growth')
+
+# 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
+print 'mapping samples into new space...'
+newSpaceMapper('300')
+newSpaceMapper('1000')
+
+# 3. final message
+print '... analysis completed.'
+        
