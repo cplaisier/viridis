@@ -18,7 +18,7 @@ cufflinksCaller.py: script to call cufflinks and quantify the mapped reads.
 
 #### visualizing samples
 pcaGrapher.py: script to compute the PCA on expression values in FPKM.  
-sampleMapper.py: script to map samples in diurnal,growth space trained in epochs 0 and 1.
+sampleMapper.py: script to map samples in diurnal,growth space trained in epochs 0 and 1.  
 sampleMapper_epoch0.py: script to map samples in diurnal,growth space trained only in epoch 0.
 
 ### finding differentially expressed transcripts
