@@ -4,7 +4,6 @@ import sys,numpy,matplotlib
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
 
-<<<<<<< HEAD
 def addArrows():
 
 
@@ -22,8 +21,6 @@ def addArrows():
 
     return None
 
-=======
->>>>>>> origin/master
 def boxPlotGrapher(classifiers,borders,flag):
 
     '''
@@ -62,17 +59,10 @@ def boxPlotGrapher(classifiers,borders,flag):
         logy=numpy.log10(y)
 
         # 3.2. actual plotting
-<<<<<<< HEAD
         bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
         setBoxColors(bp,'orange')
         bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
         setBoxColors(bp,'darkgreen')
-=======
-        #! bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-        #! setBoxColors(bp,'orange')
-        #! bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-        #! setBoxColors(bp,'darkgreen')
->>>>>>> origin/master
 
         # 3.3. saving the info for the mapping samples
         xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
@@ -93,7 +83,6 @@ def boxPlotGrapher(classifiers,borders,flag):
             sys.exit()
         
     # 3.3. closing the figure
-<<<<<<< HEAD
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
     matplotlib.pyplot.ylim([-0.2,5.])
     theXticks=range(boxPlotPosition)
@@ -103,17 +92,6 @@ def boxPlotGrapher(classifiers,borders,flag):
     matplotlib.pyplot.tight_layout(pad=0.5)
     matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
     matplotlib.pyplot.clf()
-=======
-    #! matplotlib.pyplot.xlim([0,boxPlotPosition+1])
-    #! matplotlib.pyplot.ylim([-0.2,5.])
-    #! theXticks=range(boxPlotPosition)
-    #! theXticksPosition=[element+1 for element in theXticks]
-    #! matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=2)
-    #! matplotlib.pyplot.ylabel('log10 FPKM')
-    #! matplotlib.pyplot.tight_layout(pad=0.5)
-    #! matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
-    #! matplotlib.pyplot.clf()
->>>>>>> origin/master
 
     return borders
 
@@ -210,17 +188,12 @@ def classifiersWriter(selected,flag):
 
     return None
 
-<<<<<<< HEAD
 def ellipseSizeCalculator(flag1,flag2):
-=======
-def ellipseSizeCalculator(phase1,phase2):
->>>>>>> origin/master
 
     '''
     this function calculates size of ellipsoids
     '''
 
-<<<<<<< HEAD
     if flag1 == 'light':
         rankedDimensions=sorted(lightFilteredClassifiers,key=lightFilteredClassifiers.__getitem__,reverse=True)
     elif flag1 == 'growth':
@@ -253,9 +226,6 @@ def ellipseSizeCalculator(phase1,phase2):
         averageDispersion=averageDispersion+value
 
     return averageDispersion
-=======
-    return 1,1
->>>>>>> origin/master
 
 def expressionReader():
 
@@ -478,7 +448,6 @@ def newSpaceMapper(flag):
         
         x,y=newCoordinateCalculator(sampleID)
 
-<<<<<<< HEAD
         theSize=10
         theAlpha=.85
 
@@ -503,16 +472,6 @@ def newSpaceMapper(flag):
             else:
                 print 'error defining PM replicate at newSpaceMapper. exiting...'
                 sys.exit()
-=======
-        theSize=8
-        theAlpha=.75
-
-        # defining the color depending on the light/dark
-        if metaData[sampleID]['light'] == 'AM':
-            theColor='orange'
-        elif metaData[sampleID]['light'] == 'PM':
-            theColor='darkgreen'
->>>>>>> origin/master
         else:
             print 'error while defining the color from main'
             sys.exit()
@@ -536,7 +495,6 @@ def newSpaceMapper(flag):
         else:
             print 'error while defining the marker from main'
             sys.exit()
-<<<<<<< HEAD
       
         ax.plot(x,y,marker=theMarker,mew=1,color=theColor,ms=theSize,alpha=theAlpha,mfc=theMFC,mec=theColor,zorder=10)
 
@@ -607,34 +565,6 @@ def newSpaceMapper(flag):
     matplotlib.pyplot.plot([1,1],[1,-1],color='magenta',alpha=0.5,lw=2.)
     matplotlib.pyplot.plot([-1,1],[-1,-1],color='magenta',alpha=0.5,lw=2.)
 
-=======
-    
-        ax.plot(x,y,marker=theMarker,mew=2,color=theColor,ms=theSize,alpha=theAlpha,mfc=theMFC,mec=theMEC)
-
-        # marking the pre-collapse samples
-        if metaData[sampleID]['pre-collapse'] == True and metaData[sampleID]['co2'] == 1000 and metaData[sampleID]['replicate'] == 'B':
-            ax.plot(x,y,marker='*',color='black',ms=3)
-
-    # plotting the ellipses
-    [ew,eh]=ellipseSizeCalculator('light','exp')
-    e=matplotlib.patches.Ellipse(xy=(1.5,1.5),width=ew,height=eh,edgecolor='darkgreen',fc='None',lw=1,alpha=1.,ls='--')
-    ax.add_patch(e)
-
-    [ew,eh]=ellipseSizeCalculator('light','sta')
-    e=matplotlib.patches.Ellipse(xy=(1.5,-1.5),width=ew,height=eh,edgecolor='darkgreen',fc='None',lw=1,alpha=1.,ls='--')
-    ax.add_patch(e)
-
-    # finishing the figure
-    matplotlib.pyplot.xlim([-2.,2.])
-    matplotlib.pyplot.ylim([-2.,2.])
-    matplotlib.pyplot.xticks([-1.5,1.5],['light','dark'])
-    matplotlib.pyplot.yticks([-1.5,1.5],['late','early'])
-    matplotlib.pyplot.xlabel('diurnal phase')
-    matplotlib.pyplot.ylabel('growth phase')
-    matplotlib.pyplot.tight_layout(pad=2.)
-    matplotlib.pyplot.title(flag+' ppm')
-    
->>>>>>> origin/master
     matplotlib.pyplot.savefig('sampleLocation.%s.pdf'%(str(int(flag))))
     matplotlib.pyplot.clf()
 

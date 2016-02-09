@@ -21,8 +21,8 @@ classifiersFinder.py: script that calls cuffdiff to find DETs between two condit
 
 #### visualizing samples
 pcaGrapher.py: script to compute the PCA on expression values in FPKM.  
-sampleMapper.py: script to map samples in diurnal,growth space trained in epochs 0 and 1.  
-sampleMapper_epoch0.py: script to map samples in diurnal,growth space trained only in epoch 0.  
+sampleMapper.py: script to map samples in diurnal, growth space trained in epochs 0 and 1.  
+sampleMapper_epoch0.py: script to map samples in diurnal, growth space trained only in epoch 0.  
 
 #### misc
 logValuesMatrixCreator.py: script to transform absolute (FPKM) into relative expression (log2 fold change).
