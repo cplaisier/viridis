@@ -28,18 +28,15 @@ def trimmomaticCaller(instance):
     return None
 
 # 0. defining user variables
-rawReadsDir='/Volumes/omics4tb/alomana/projects/dtp/data/reads/tippingPoints/rawData/'
-cleanReadsDir='/Volumes/omics4tb/alomana/projects/dtp/data/reads/tippingPoints/cleanReads/'
-logFilesDir='/Volumes/omics4tb/alomana/projects/dtp/data/reads/tippingPoints/logFilesTrimmomatic/'
-
-rawReadsDir='/Users/alomana/tempo/rawData/'
-cleanReadsDir='/Users/alomana/tempo/cleanReads/'
-logFilesDir='/Users/alomana/tempo/logFilesTrimmomatic/'
+rawReadsDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/rawData/secondRun/'
+cleanReadsDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cleanReads/secondRun/'
+logFilesDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/logFilesTrimmomatic/'
 
 path2Adapter='/Users/alomana/projects/ap/seqs/src/adapters/TruSeq3-PE-2.fa'
 
 # 1. reading the files
-readsFiles=os.listdir(rawReadsDir)
+foundFiles=os.listdir(rawReadsDir)
+readsFiles=[element for element in foundFiles if not element.startswith('.')]
 
 allFiles=[]
 for readsFile in readsFiles:

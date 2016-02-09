@@ -1,29 +1,7 @@
-### this script locates all epochs samples into a light vs. growth space characterized in epoch=0
-
+### this script locates epoch 2 samples into a light vs. growth space 
 import sys,numpy,matplotlib
 from matplotlib import pyplot
-from matplotlib.patches import Ellipse
 
-<<<<<<< HEAD
-def addArrows():
-
-
-    begin=(-0.4,1.5)
-    end=(0.4,1.5)
-    matplotlib.pyplot.annotate("", xy=end, xytext=begin,arrowprops=dict(arrowstyle="->",alpha=0.2))
-
-    begin=(-0.4,-1.5)
-    end=(0.4,-1.5)
-    matplotlib.pyplot.annotate("", xy=end, xytext=begin,arrowprops=dict(arrowstyle="->",alpha=0.2))
-
-    begin=(0.4,0.4)
-    end=(-0.4,-0.4)
-    matplotlib.pyplot.annotate("", xy=end, xytext=begin,arrowprops=dict(arrowstyle="->",alpha=0.2))
-
-    return None
-
-=======
->>>>>>> origin/master
 def boxPlotGrapher(classifiers,borders,flag):
 
     '''
@@ -62,58 +40,39 @@ def boxPlotGrapher(classifiers,borders,flag):
         logy=numpy.log10(y)
 
         # 3.2. actual plotting
-<<<<<<< HEAD
         bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
         setBoxColors(bp,'orange')
         bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
         setBoxColors(bp,'darkgreen')
-=======
-        #! bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-        #! setBoxColors(bp,'orange')
-        #! bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-        #! setBoxColors(bp,'darkgreen')
->>>>>>> origin/master
 
         # 3.3. saving the info for the mapping samples
-        xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
-        ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy); sdy=numpy.std(logy)
+        xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx)
+        ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy)
         if xb > yb:
             center=((xa-yc)/2.)+yc
         else:
             center=((ya-xc)/2.)+xc
         # incorporating the data
-        #! w=weightRankCalculator(geneID,listOfClassifiers)
+        #w=weightRankCalculator(geneID,listOfClassifiers)
         w=weightNMLCalculator(geneID,flag)
         if flag == 'light':
-            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
+            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w]
         elif flag == 'growth':
-            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
+            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w]
         else:
             print 'error handling flags from boxPlotGrapher (bis)'
             sys.exit()
         
     # 3.3. closing the figure
-<<<<<<< HEAD
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
-    matplotlib.pyplot.ylim([-0.2,5.])
+    matplotlib.pyplot.ylim([-0.2,3.75])
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
-    matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=2)
+    matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=0.5)
     matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
     matplotlib.pyplot.clf()
-=======
-    #! matplotlib.pyplot.xlim([0,boxPlotPosition+1])
-    #! matplotlib.pyplot.ylim([-0.2,5.])
-    #! theXticks=range(boxPlotPosition)
-    #! theXticksPosition=[element+1 for element in theXticks]
-    #! matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=2)
-    #! matplotlib.pyplot.ylabel('log10 FPKM')
-    #! matplotlib.pyplot.tight_layout(pad=0.5)
-    #! matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
-    #! matplotlib.pyplot.clf()
->>>>>>> origin/master
 
     return borders
 
@@ -187,76 +146,6 @@ def classifiersRetriever(flag):
 
     return listOfClassifiers
 
-def classifiersWriter(selected,flag):
-
-    if flag == 'light':
-        f=open('epoch0_lightDescriptors_AM_ranked.txt','w')
-        g=open('epoch0_lightDescriptors_PM_ranked.txt','w')
-    elif flag == 'growth':
-        f=open('epoch0_growthDescriptors_exp_ranked.txt','w')
-        g=open('epoch0_growthDescriptors_sta_ranked.txt','w')
-
-    sortedList=sorted(selected,key=selected.__getitem__,reverse=True)
-    for element in sortedList:
-        m=borders[flag][element][1]
-        n=borders[flag][element][4]
-        if m > n:
-            f.write('%s\n'%element)
-        else:
-            g.write('%s\n'%element)
-
-    f.close()
-    g.close()
-
-    return None
-
-<<<<<<< HEAD
-def ellipseSizeCalculator(flag1,flag2):
-=======
-def ellipseSizeCalculator(phase1,phase2):
->>>>>>> origin/master
-
-    '''
-    this function calculates size of ellipsoids
-    '''
-
-<<<<<<< HEAD
-    if flag1 == 'light':
-        rankedDimensions=sorted(lightFilteredClassifiers,key=lightFilteredClassifiers.__getitem__,reverse=True)
-    elif flag1 == 'growth':
-        rankedDimensions=sorted(growthFilteredClassifiers,key=growthFilteredClassifiers.__getitem__,reverse=True)
-
-    averageDispersion=0.
-    for transcript in rankedDimensions:
-
-        if flag2 == 'AM' or flag2 == 'exp':
-        
-            mean=borders[flag1][transcript][1]
-            deviation=borders[flag1][transcript][-2]
-            top=borders[flag1][transcript][2]
-            weight=borders[flag1][transcript][-3]
-            
-        elif flag2 == 'PM' or flag2 == 'sta':
-            
-            mean=borders[flag1][transcript][4]
-            deviation=borders[flag1][transcript][-1]
-            top=borders[flag1][transcript][5]
-            weight=borders[flag1][transcript][-3]
-     
-        
-        stretch=top-mean
-        if stretch != 0.:
-            position=0.5*(deviation*1.96)/stretch
-        else:
-            position=0.
-        value=position*weight
-        averageDispersion=averageDispersion+value
-
-    return averageDispersion
-=======
-    return 1,1
->>>>>>> origin/master
-
 def expressionReader():
 
     '''
@@ -304,7 +193,7 @@ def loadCalculator(sampleID,flag):
         NML=borders[flag][classifier][6] # No Man's Land
         w=borders[flag][classifier][7] # weight
         
-        # differentiate if it's positive (AM,exp) or negative (PM,sta) or miss-regulated
+        # differentiate if it's positive (AM,exp) or negative (PM,sta) or missregulated
         positive=None
         missR=None
         if b > e:
@@ -403,7 +292,7 @@ def expressionRetriever(classifiers,flag,condition):
     # 1. selecting the acceptable samples
     selectedSamples=[]
     for sampleID in metaData.keys():
-        if metaData[sampleID]['epoch'] == 0:
+        if metaData[sampleID]['epoch'] != 2:
             if metaData[sampleID][flag] == condition:
                 selectedSamples.append(sampleID)
                 
@@ -430,23 +319,19 @@ def metadataReader():
         for line in f:
             vector=line.split('\t')
             if vector[4] != '':
-
-                sampleID=vector[6]
+                sampleID=vector[5]
                 if vector[0] != '':
                     epoch=int(vector[0])
                 growth=vector[1]
                 light=vector[2]
                 co2=int(vector[3].replace(',',''))
                 replicate=vector[4]
-                preCollapse=bool(int(vector[5]))
-
                 metaData[sampleID]={}
                 metaData[sampleID]['growth']=growth
                 metaData[sampleID]['epoch']=epoch
                 metaData[sampleID]['light']=light
                 metaData[sampleID]['co2']=co2
                 metaData[sampleID]['replicate']=replicate
-                metaData[sampleID]['pre-collapse']=preCollapse
 
     return metaData
 
@@ -456,187 +341,73 @@ def newCoordinateCalculator(sampleID):
     this function computes the new coordinates of a sample given the borders calculated from the filtered classifiers
     '''
 
-    x=-loadCalculator(sampleID,'light')
+    x=loadCalculator(sampleID,'light')
     y=loadCalculator(sampleID,'growth')
     
     return x,y
 
-def newSpaceMapper(flag):
+def newSpaceMapper():
 
     '''
     this function plots the samples into a new space
     '''
-
-    preselectedSamples=[sampleID for sampleID in metaData.keys() if metaData[sampleID]['co2'] == int(flag)]
-    print 'selected ', len(preselectedSamples), 'samples for plotting on ',flag, 'condition.'
-
-    # starting the figure
-    fig=matplotlib.pyplot.figure()
-    ax=fig.add_subplot(111)
     
-    for sampleID in preselectedSamples:
+    for sampleID in metaData.keys():
         
         x,y=newCoordinateCalculator(sampleID)
 
-<<<<<<< HEAD
-        theSize=10
-        theAlpha=.85
-
-        # defining the color depending on the light/dark
-        if metaData[sampleID]['light'] == 'AM':
-            if metaData[sampleID]['replicate'] == 'A':
-                theColor='chocolate'
-            elif metaData[sampleID]['replicate'] == 'B':
-                theColor='orange'
-            elif metaData[sampleID]['replicate'] == 'C':
-                theColor='orangered'
-            else:
-                print 'error defining AM replicate at newSpaceMapper. exiting...'
-                sys.exit()
-        elif metaData[sampleID]['light'] == 'PM':
-            if metaData[sampleID]['replicate'] == 'A':
-                theColor='olive'
-            elif metaData[sampleID]['replicate'] == 'B':
-                theColor='green'
-            elif metaData[sampleID]['replicate'] == 'C':
-                theColor='lightseagreen'
-            else:
-                print 'error defining PM replicate at newSpaceMapper. exiting...'
-                sys.exit()
-=======
-        theSize=8
-        theAlpha=.75
+        # defining the size and alpha depending on the epoch
+        if metaData[sampleID]['epoch'] == 2:
+            theSize=10.
+            theAlpha=1.
+        else:
+            theSize=5.
+            theAlpha=.5
 
         # defining the color depending on the light/dark
         if metaData[sampleID]['light'] == 'AM':
             theColor='orange'
         elif metaData[sampleID]['light'] == 'PM':
             theColor='darkgreen'
->>>>>>> origin/master
         else:
             print 'error while defining the color from main'
             sys.exit()
 
-        # defining the marker type depending on epoch
-        if metaData[sampleID]['epoch'] == 0:
-            theMarker='o'
-        elif metaData[sampleID]['epoch'] == 1:
-            theMarker='s'
-        elif metaData[sampleID]['epoch'] == 2:
-            theMarker='^'
-        else:
-            print 'error while defining the marker from main'
-            sys.exit()
-
-        # defining the facecolor and markeredgecolor depending on exp/sta
+        # defining the marker type depending on exp/sta
         if metaData[sampleID]['growth'] == 'exp':
-            theMFC='None'; theMEC=theColor
+            theMarker='o'
         elif metaData[sampleID]['growth'] == 'sta':
-            theMFC=theColor; theMEC='None'
+            theMarker='s'
         else:
             print 'error while defining the marker from main'
             sys.exit()
-<<<<<<< HEAD
-      
-        ax.plot(x,y,marker=theMarker,mew=1,color=theColor,ms=theSize,alpha=theAlpha,mfc=theMFC,mec=theColor,zorder=10)
-
-        # marking the pre-collapse samples
-        if metaData[sampleID]['pre-collapse'] == True and metaData[sampleID]['co2'] == 1000 and metaData[sampleID]['replicate'] == 'B':
-            ax.plot(x,y,marker='*',color='black',ms=3,zorder=10)
-
-    # plotting the ellipses
-    a=ellipseSizeCalculator('light','AM')
-    b=ellipseSizeCalculator('light','PM')
-    c=ellipseSizeCalculator('growth','exp')
-    d=ellipseSizeCalculator('growth','sta')
-
-    e=matplotlib.patches.Ellipse(xy=(1.5,1.5),width=b,height=c,edgecolor='darkgreen',fc='None',lw=1,alpha=1.,ls='--')
-    ax.add_patch(e)
-
-    e=matplotlib.patches.Ellipse(xy=(1.5,-1.5),width=b,height=d,edgecolor='darkgreen',fc='None',lw=1,alpha=1.,ls='--')
-    ax.add_patch(e)
-
     
-    e=matplotlib.patches.Ellipse(xy=(-1.5,1.5),width=a,height=c,edgecolor='orange',fc='None',lw=1,alpha=1.,ls='--')
-    ax.add_patch(e)
+        matplotlib.pyplot.plot(x,y,marker=theMarker,mew=0,color=theColor,ms=theSize,alpha=theAlpha)
 
-    e=matplotlib.patches.Ellipse(xy=(-1.5,-1.5),width=a,height=d,edgecolor='orange',fc='None',lw=1,alpha=1.,ls='--')
-    ax.add_patch(e)
+        # plotting the names of the concerning samples
+        if metaData[sampleID]['epoch'] == 2:
+            if metaData[sampleID]['light'] == 'PM' and metaData[sampleID]['growth'] == 'exp':
+                if metaData[sampleID]['replicate'] == 'A':
+                    theMarker='$A.exp.PM$'
+                if metaData[sampleID]['replicate'] == 'C':
+                    theMarker='$C.exp.PM$'
+                matplotlib.pyplot.plot(x,y+0.15,color='black',marker=theMarker,ms=50)
 
-    addArrows()
-
-    # setting ranges
-    matplotlib.pyplot.xlim([-2.,2.])
-    matplotlib.pyplot.ylim([-2.,2.])
-    matplotlib.pyplot.xticks([-1.5,1.5],['light','dark'],fontsize=24)
-    matplotlib.pyplot.yticks([-1.5,1.5],['late','early'],fontsize=24)
-    matplotlib.pyplot.xlabel('diurnal phase',fontsize=24)
-    matplotlib.pyplot.ylabel('growth phase',fontsize=24)
-    matplotlib.pyplot.tight_layout(pad=2.5)
-    matplotlib.pyplot.title(flag+' ppm',fontsize=28)
-
-    # defining health zones
-    matplotlib.pyplot.plot([-2,-1],[1,1],color='black',alpha=0.2)
-    matplotlib.pyplot.plot([-1,-1],[1,2],color='black',alpha=0.2)
-
-    matplotlib.pyplot.plot([2,1],[1,1],color='black',alpha=0.2)
-    matplotlib.pyplot.plot([1,1],[1,2],color='black',alpha=0.2)
-
-    matplotlib.pyplot.plot([2,1],[-1,-1],color='black',alpha=0.2)
-    matplotlib.pyplot.plot([1,1],[-1,-2],color='black',alpha=0.2)
-
-    matplotlib.pyplot.plot([-2,-1],[-1,-1],color='black',alpha=0.2)
-    matplotlib.pyplot.plot([-1,-1],[-1,-2],color='black',alpha=0.2)
-
-    # defining the grid lines
-    matplotlib.pyplot.plot([-1.5,-1.5],[1,2],color='black',ls=':',alpha=0.4)
-    matplotlib.pyplot.plot([-2,-1],[1.5,1.5],color='black',ls=':',alpha=0.4)
-
-    matplotlib.pyplot.plot([-1.5,-1.5],[-1,-2],color='black',ls=':',alpha=0.4)
-    matplotlib.pyplot.plot([-2,-1],[-1.5,-1.5],color='black',ls=':',alpha=0.4)
-
-    matplotlib.pyplot.plot([1.5,1.5],[-1,-2],color='black',ls=':',alpha=0.4)
-    matplotlib.pyplot.plot([2,1],[-1.5,-1.5],color='black',ls=':',alpha=0.4)
-
-    matplotlib.pyplot.plot([1.5,1.5],[1,2],color='black',ls=':',alpha=0.4)
-    matplotlib.pyplot.plot([2,1],[1.5,1.5],color='black',ls=':',alpha=0.4)
-
-    # defining the misregulation zone
-    matplotlib.pyplot.plot([-1,-1],[-1,1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([-1,1],[1,1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([1,1],[1,-1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([-1,1],[-1,-1],color='magenta',alpha=0.5,lw=2.)
-
-=======
-    
-        ax.plot(x,y,marker=theMarker,mew=2,color=theColor,ms=theSize,alpha=theAlpha,mfc=theMFC,mec=theMEC)
-
-        # marking the pre-collapse samples
-        if metaData[sampleID]['pre-collapse'] == True and metaData[sampleID]['co2'] == 1000 and metaData[sampleID]['replicate'] == 'B':
-            ax.plot(x,y,marker='*',color='black',ms=3)
-
-    # plotting the ellipses
-    [ew,eh]=ellipseSizeCalculator('light','exp')
-    e=matplotlib.patches.Ellipse(xy=(1.5,1.5),width=ew,height=eh,edgecolor='darkgreen',fc='None',lw=1,alpha=1.,ls='--')
-    ax.add_patch(e)
-
-    [ew,eh]=ellipseSizeCalculator('light','sta')
-    e=matplotlib.patches.Ellipse(xy=(1.5,-1.5),width=ew,height=eh,edgecolor='darkgreen',fc='None',lw=1,alpha=1.,ls='--')
-    ax.add_patch(e)
+            if metaData[sampleID]['light'] == 'AM' and metaData[sampleID]['growth'] == 'sta':
+                if metaData[sampleID]['replicate'] == 'A':
+                    theMarker='$A.sta.AM$'
+                if metaData[sampleID]['replicate'] == 'C':
+                    theMarker='$C.sta.AM$'
+                matplotlib.pyplot.plot(x,y+0.15,color='black',marker=theMarker,ms=50)
+                
 
     # finishing the figure
-    matplotlib.pyplot.xlim([-2.,2.])
-    matplotlib.pyplot.ylim([-2.,2.])
-    matplotlib.pyplot.xticks([-1.5,1.5],['light','dark'])
-    matplotlib.pyplot.yticks([-1.5,1.5],['late','early'])
-    matplotlib.pyplot.xlabel('diurnal phase')
-    matplotlib.pyplot.ylabel('growth phase')
-    matplotlib.pyplot.tight_layout(pad=2.)
-    matplotlib.pyplot.title(flag+' ppm')
-    
->>>>>>> origin/master
-    matplotlib.pyplot.savefig('sampleLocation.%s.pdf'%(str(int(flag))))
-    matplotlib.pyplot.clf()
+    matplotlib.pyplot.xlim([-2.5,2.5])
+    matplotlib.pyplot.ylim([-2.5,2.5])
+    matplotlib.pyplot.xlabel('dark/light')
+    matplotlib.pyplot.ylabel('stationary/exponential')
+    matplotlib.pyplot.tight_layout(pad=0.5)
+    matplotlib.pyplot.savefig('sampleLocation.pdf')
 
     
     return None
@@ -691,7 +462,7 @@ print 'initializing variables...'
 # 0.1. user defined variables and paths
 cuffdiffDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cuffdiff/'
 expressionFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/allSamples/genes.fpkm_table.v2.txt'
-metaDataFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/metadata/metadata.v2.tsv'
+metaDataFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/metadata/metadata.tsv'
 
 # 0.2. reading metadata
 metaData=metadataReader()
@@ -702,10 +473,10 @@ expression=expressionReader()
 # 1. recover the DET genes. Rank them on q-value and plot the boxplots. select the best ones.
 print 'recovering classifiers...'
 
-lightClassifiers=classifiersRetriever('light_epoch0')
+lightClassifiers=classifiersRetriever('light')
 print len(lightClassifiers),'light classifiers detected.'
 
-growthClassifiers=classifiersRetriever('growth_epoch0')
+growthClassifiers=classifiersRetriever('growth')
 print len(growthClassifiers),'growth classifiers detected.'
 
 # 1.2. filtering the classifiers based on separation
@@ -721,13 +492,9 @@ borders={}
 borders=boxPlotGrapher(lightFilteredClassifiers,borders,'light')
 borders=boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
 
-classifiersWriter(lightFilteredClassifiers,'light')
-classifiersWriter(growthFilteredClassifiers,'growth')
-
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
 print 'mapping samples into new space...'
-newSpaceMapper('300')
-newSpaceMapper('1000')
+newSpaceMapper()
 
 # 3. final message
 print '... analysis completed.'

@@ -10,7 +10,7 @@ def htseqCounter(folder):
     this function calls HTSeq
     '''
 
-    htseqExecutable='python -m HTSeq.scripts.count -r pos -f bam -t gene -s reverse '
+    htseqExecutable='python -m HTSeq.scripts.count -r pos -f bam -t gene -s reverse -o file.sam '
     bamFile=bamFilesDir+folder+'/Aligned.sortedByCoord.out.bam '
     genomeAnnotationFile='/proj/omics4tb/alomana/projects/dtp/data/ensembl/Thalassiosira_pseudonana.ASM14940v1.29.gff3'
     outputDirection=' > %s%s.txt'%(countsDir,folder)
@@ -22,13 +22,13 @@ def htseqCounter(folder):
     print
     os.system(cmd)
 
-    #sys.exit()
+    sys.exit()
 
     return None
 
 # 0. defining user variables
-bamFilesDir='/proj/omics4tb/alomana/projects/dtp/data/reads/tippingPoints/bamFiles/'
-countsDir='/proj/omics4tb/alomana/projects/dtp/data/reads/tippingPoints/counts/'
+bamFilesDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/bamFiles/'
+countsDir='/proj/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/counts/'
 
 # 1. defining the BAM files
 bamRoots=os.listdir(bamFilesDir)
