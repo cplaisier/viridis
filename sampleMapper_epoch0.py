@@ -1,6 +1,6 @@
 ### this script locates all epochs samples into a light vs. growth space characterized in epoch=0
 
-import sys,numpy,matplotlib
+import sys,numpy,matplotlib,random
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
 
@@ -44,7 +44,7 @@ def boxPlotGrapher(classifiers,borders,flag):
     # 3. plotting and recovering the info for the mapping samples
     boxPlotPosition=0
     listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True) # ranking the classifiers
-    for geneID in listOfClassifiers: 
+    for geneID in listOfClassifiers:
         boxPlotPosition=boxPlotPosition+1
         borders[flag][geneID]={}
         
@@ -59,10 +59,11 @@ def boxPlotGrapher(classifiers,borders,flag):
         logy=numpy.log10(y)
 
         # 3.2. actual plotting
-        bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-        setBoxColors(bp,'orange')
-        bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-        setBoxColors(bp,'darkgreen')
+        if boxplotPlotting == True:
+            bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'orange')
+            bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'darkgreen')
 
         # 3.3. saving the info for the mapping samples
         xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
@@ -83,15 +84,17 @@ def boxPlotGrapher(classifiers,borders,flag):
             sys.exit()
         
     # 3.3. closing the figure
-    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
-    matplotlib.pyplot.ylim([-0.2,5.])
-    theXticks=range(boxPlotPosition)
-    theXticksPosition=[element+1 for element in theXticks]
-    matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=2)
-    matplotlib.pyplot.ylabel('log10 FPKM')
-    matplotlib.pyplot.tight_layout(pad=0.5)
-    matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
-    matplotlib.pyplot.clf()
+    if boxplotPlotting == True:
+        matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+        matplotlib.pyplot.ylim([-0.2,5.])
+        theXticks=range(boxPlotPosition)
+        theXticksPosition=[element+1 for element in theXticks]
+        matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=2)
+        matplotlib.pyplot.ylabel('log10 FPKM')
+        matplotlib.pyplot.tight_layout(pad=2.5)
+        #! matplotlib.pyplot.subplots_adjust(left=0.05, right=0.99, top=0.95, bottom=0.33)
+        matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
+        matplotlib.pyplot.clf()
 
     return borders
 
@@ -187,6 +190,33 @@ def classifiersWriter(selected,flag):
     g.close()
 
     return None
+
+def distanceCalculator(sampleID):
+
+    '''
+    this function calculates a single value measure of misregulation
+    '''
+
+    diurnalLoad=loadCalculator(sampleID,'light')
+    growthLoad=loadCalculator(sampleID,'growth')
+
+    if metaData[sampleID]['light'] == 'AM':
+        sepx=diurnalLoad
+    elif metaData[sampleID]['light'] == 'PM':
+        sepx=-diurnalLoad
+
+    if metaData[sampleID]['growth'] == 'exp':
+        sepy=growthLoad
+    elif metaData[sampleID]['growth'] == 'sta':
+        sepy=-growthLoad
+
+    value=0.5*sepx+0.5*sepy
+    #! value=numpy.sqrt(sepx**2+sepy**2)
+    value=sepx
+
+    #try making each boxplot being one, total 3
+
+    return value
 
 def ellipseSizeCalculator(flag1,flag2):
 
@@ -356,8 +386,8 @@ def loadCalculator(sampleID,flag):
                         value=-1.5+(0.5*(e-s))/stretch
 
         # weighting the value
-        value=value*w
-        averageLoad=averageLoad+value
+        term=w*value
+        averageLoad=averageLoad+term
 
     #! print averageLoad 
     #! print
@@ -585,6 +615,104 @@ def setBoxColors(bp,theColor):
 
     return None
 
+def oneDimensionTimeMapper():
+
+    '''
+    this function maps samples into 1D space and plots them as a time series
+    '''
+
+    epsilon=0.1
+    theSize=15
+    theAlpha=.6
+    
+    # f.1. building a structure holding samples as a time series
+    co2levels=[300,1000]
+    epochs=[0,1,2]
+    growths=['exp','sta']
+    diurnals=['AM','PM']
+
+    for co2level in co2levels:
+        orderedSamples={}
+        time=0
+        for epoch in epochs:
+            for growth in growths:
+                for diurnal in diurnals:
+                    time=time+1
+                    for sampleID in metaData.keys():
+                        if metaData[sampleID]['co2'] == co2level and metaData[sampleID]['epoch'] == epoch and metaData[sampleID]['growth'] == growth and metaData[sampleID]['light'] == diurnal:
+                            if time in orderedSamples:
+                                orderedSamples[time].append(sampleID)
+                            else:
+                                orderedSamples[time]=[sampleID]
+            
+        # f.2. computing distances and building trajectories for each co2 condition
+        timePoints=orderedSamples.keys()
+        timePoints.sort()
+        for timePoint in timePoints:
+            samples=orderedSamples[timePoint]
+
+            yPoints=[]
+            for sampleID in samples:
+                
+                yPos=distanceCalculator(sampleID)
+
+                # selecting position and color
+                if metaData[sampleID]['replicate'] == 'A':
+                    xPos=timePoint-epsilon
+                    if co2level == 300:
+                        theColor='lightblue'
+                    else:
+                        theColor='salmon'
+                elif metaData[sampleID]['replicate'] == 'B':
+                    xPos=timePoint
+                    if co2level == 300:
+                        theColor='blue'
+                    else:
+                        theColor='red'
+                elif metaData[sampleID]['replicate'] == 'C':
+                    xPos=timePoint+epsilon
+                    if co2level == 300:
+                        theColor='darkblue'
+                    else:
+                        theColor='darkred'
+                else:
+                    print 'error choosing the replicates from oneDimensionTimeMapper. exiting...'
+                    sys.exit()
+            
+                # actual plotting the dots
+                matplotlib.pyplot.plot(xPos,yPos,marker='.',color=theColor,ms=theSize,alpha=theAlpha,mew=0.,zorder=1)
+                yPoints.append(yPos)
+            # plotting the bars
+            average=numpy.mean(yPoints)
+            if co2level == 300:
+                theColor='blue'
+            else:
+                theColor='red'
+            matplotlib.pyplot.plot([timePoint-epsilon,timePoint+epsilon],[average,average],'-',color=theColor,lw=2,zorder=2)
+             
+    # f.3. finishing up the figure
+    matplotlib.pyplot.plot([1,12],[1.5,1.5],color='black',ls=':')
+    matplotlib.pyplot.plot([1,12],[1.,1.],color='magenta',ls='--')
+    matplotlib.pyplot.plot([1,12],[-1.,-1.],color='magenta',ls='--')
+    matplotlib.pyplot.plot([4.5,4.5],[-1.5,2],color='black',alpha=0.2,ls='--')
+    matplotlib.pyplot.plot([8.5,8.5],[-1.5,2],color='black',alpha=0.2,ls='--')
+    
+    matplotlib.pyplot.xlabel('epoch',fontsize=24)
+    matplotlib.pyplot.ylabel('state',fontsize=24)
+    #! matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.subplots_adjust(left=0.2, right=0.95, top=0.9, bottom=0.11)
+
+    matplotlib.pyplot.xticks((2.5,6.5,10.5),('0','1','2'))
+    matplotlib.pyplot.yticks((-1.5,0.,1.5),('inverse','misregulation','expected'))
+
+    matplotlib.pyplot.xlim([0,13])
+    matplotlib.pyplot.ylim([-1.5,2])
+    
+    matplotlib.pyplot.savefig('distance.pdf')
+    matplotlib.pyplot.clf()
+
+    return None
+
 def weightNMLCalculator(geneID,flag):
 
     '''
@@ -623,6 +751,10 @@ cuffdiffDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoint
 expressionFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/allSamples/genes.fpkm_table.v2.txt'
 metaDataFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/metadata/metadata.v2.tsv'
 
+boxplotPlotting=False
+time300=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75])
+time1000=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75,15.45833333,15.79166667,17.41666667,17.79166667])
+
 # 0.2. reading metadata
 metaData=metadataReader()
 
@@ -659,6 +791,10 @@ print 'mapping samples into new space...'
 newSpaceMapper('300')
 newSpaceMapper('1000')
 
-# 3. final message
+# 3. map samples into a 1D variable
+print 'mapping samples into 1D space...'
+oneDimensionTimeMapper()
+
+# 4. final message
 print '... analysis completed.'
         
