@@ -170,12 +170,17 @@ def classifiersRetriever(flag):
 
 def classifiersWriter(selected,flag):
 
+    '''
+    this function writes the gene descriptors into a file
+    '''
+
+    # f.1. differentiating phases of descriptors
     if flag == 'light':
-        f=open('epoch0_lightDescriptors_AM_ranked.txt','w')
-        g=open('epoch0_lightDescriptors_PM_ranked.txt','w')
+        f=open('descriptors/epoch0_lightDescriptors_AM_ranked.txt','w')
+        g=open('descriptors/epoch0_lightDescriptors_PM_ranked.txt','w')
     elif flag == 'growth':
-        f=open('epoch0_growthDescriptors_exp_ranked.txt','w')
-        g=open('epoch0_growthDescriptors_sta_ranked.txt','w')
+        f=open('descriptors/epoch0_growthDescriptors_exp_ranked.txt','w')
+        g=open('descriptors/epoch0_growthDescriptors_sta_ranked.txt','w')
 
     sortedList=sorted(selected,key=selected.__getitem__,reverse=True)
     for element in sortedList:
@@ -188,6 +193,22 @@ def classifiersWriter(selected,flag):
 
     f.close()
     g.close()
+
+    # f.2. adding the relative importance of each descriptor
+    if flag == 'light':
+        f=open('descriptors/epoch0_lightDescriptors_ranked.txt','w')
+    elif flag == 'growth':
+        f=open('descriptors/epoch0_growthDescriptors_ranked.txt','w')
+
+    accW=0.
+    rank=0
+    f.write('#rank\tgeneID\tW\taccW\n')
+    for element in sortedList:
+        rank=rank+1
+        localW=borders[flag][element][-3]
+        accW=accW+localW
+        f.write('%s\t%s\t%.4f\t%.4f\n'%(rank,element,localW,accW))
+    f.close()
 
     return None
 
@@ -325,26 +346,24 @@ def loadCalculator(sampleID,flag):
                 missR=True
             else:
                 missR=False
-
-        #! verbose option
-        #! print classifier,s,'\t',a,b,c,d,e,f,'\t',NML,w,'\t',positive,missR
         
-        # working with the miss regulated samples
+        # working with the misregulated samples
         if missR == True:
             if b > e:
                 if s > NML:
-                    stretch=a-NML
+                    stretch=abs(a-NML)
                     value=(s-NML)/stretch
                 else:
-                    stretch=NML-f
-                    value=-(s-f)/stretch
+                    stretch=abs(NML-f)
+                    value=-(NML-s)/stretch
             else:
                 if s > NML:
                     stretch=d-NML
                     value=-(s-NML)/stretch
                 else:
                     stretch=NML-c
-                    value=(s-c)/stretch
+                    value=(NML-s)/stretch
+                        
         # dealing with values within previously observed
         else:
             if positive == True: # it is a light sample
@@ -376,6 +395,7 @@ def loadCalculator(sampleID,flag):
                     else:
                         stretch=e-d
                         value=-1.5-(0.5*(e-s))/stretch
+                        
                 # assuming light boxplot is below
                 else:
                     if s > e:
@@ -388,9 +408,6 @@ def loadCalculator(sampleID,flag):
         # weighting the value
         term=w*value
         averageLoad=averageLoad+term
-
-    #! print averageLoad 
-    #! print
 
     return averageLoad
 
