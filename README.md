@@ -23,6 +23,7 @@ samplesCorrelationGrapher.py: script to compute and plot the correlation among s
 pcaGrapher.py: script to compute the PCA on expression values in FPKM.  
 sampleMapper.py: script to map samples in diurnal, growth space trained in epochs 0 and 1.  
 sampleMapper_epoch0.py: script to map samples in diurnal, growth space trained only in epoch 0.  
+GSE_Mapper.py: script to map samples into diurnal and growth space from microarray data.  
 
 #### misc
 logValuesMatrixCreator.py: script to transform absolute (FPKM) into relative expression (log2 fold change).
