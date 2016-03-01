@@ -354,15 +354,15 @@ def loadCalculator(sampleID,flag):
                     stretch=abs(a-NML)
                     value=(s-NML)/stretch
                 else:
-                    stretch=abs(NML-f)
-                    value=-(NML-s)/stretch
+                    stretch=abs(f-NML)
+                    value=-abs(s-NML)/stretch
             else:
                 if s > NML:
-                    stretch=d-NML
-                    value=-(s-NML)/stretch
+                    stretch=abs(d-NML)
+                    value=-abs(s-NML)/stretch
                 else:
-                    stretch=NML-c
-                    value=(NML-s)/stretch
+                    stretch=abs(c-NML)
+                    value=abs(s-NML)/stretch
                         
         # dealing with values within previously observed
         else:
@@ -370,40 +370,47 @@ def loadCalculator(sampleID,flag):
                 # assuming light boxplot is above
                 if b > e:
                     if s > b:
-                        stretch=c-b
-                        value=1.5+(0.5*(s-b))/stretch
+                        stretch=abs(c-b)
+                        deviation=abs(s-b)
+                        value=1.5+0.5*(deviation/stretch)
                     else:
-                        stretch=b-a
-                        value=1.+(0.5*(s-a))/stretch
+                        stretch=abs(b-a)
+                        deviation=abs(s-b)
+                        value=1.5-0.5*(deviation/stretch)
                 # assuming light boxplot is below
                 else:
                     if s > b:
-                        stretch=c-b
-                        value=1.5-(0.5*(s-b))/stretch
+                        stretch=abs(c-b)
+                        deviation=abs(s-b)
+                        value=1.5-0.5*(deviation/stretch)
                     else:
-                        stretch=b-a
+                        stretch=abs(b-a)
+                        deviation=abs(s-b)
                         if stretch != 0.:
-                            value=1.5+(0.5*(b-s))/stretch
+                            value=1.5+0.5*(deviation/stretch)
                         else:
                             value=2.
             else: # it is a dark sample
                 # assuming light boxtplot is above
                 if b > e:
                     if s > e:
-                        stretch=f-e
-                        value=-1.5+(0.5*(s-e))/stretch
+                        stretch=abs(f-e)
+                        deviation=abs(s-e)
+                        value=-1.5+0.5*(deviation/stretch)
                     else:
-                        stretch=e-d
-                        value=-1.5-(0.5*(e-s))/stretch
-                        
+                        stretch=abs(e-d)
+                        deviation=abs(s-e)
+                        value=-1.5-0.5*(deviation/stretch)
                 # assuming light boxplot is below
                 else:
                     if s > e:
-                        stretch=f-e
-                        value=-1.5-(0.5*(s-e))/stretch
+                        stretch=abs(f-e)
+                        deviation=abs(s-e)
+                        value=-1.5-0.5*(deviation/stretch)
                     else:
-                        stretch=e-d
-                        value=-1.5+(0.5*(e-s))/stretch
+                        stretch=abs(e-d)
+                        deviation=abs(s-e)
+                        value=-1.5+0.5*(deviation/stretch)
 
         # weighting the value
         term=w*value
@@ -494,7 +501,7 @@ def newSpaceMapper(flag):
     for sampleID in preselectedSamples:
         
         x,y=newCoordinateCalculator(sampleID)
-
+    
         theSize=10
         theAlpha=.85
 
