@@ -355,14 +355,14 @@ def newCoordinateCalculator(sampleID):
     
     return x,y
 
-def newSpaceMapper(flag):
+def newSpaceMapper():
 
     '''
     this function plots the samples into a new space
     '''
 
-    preselectedSamples=[sampleID for sampleID in metaData.keys() if metaData[sampleID]['co2'] == int(flag)]
-    print 'selected ', len(preselectedSamples), 'samples for plotting on ',flag, 'condition.'
+    preselectedSamples=[sampleID for sampleID in metaData.keys()]
+    print 'selected ', len(preselectedSamples), 'samples for plotting.'
 
     # starting the figure
     fig=matplotlib.pyplot.figure()
@@ -373,26 +373,33 @@ def newSpaceMapper(flag):
         x,y=newCoordinateCalculator(sampleID)
         print sampleID,x,y
         
-        theSize=10
-        theAlpha=.85
-        theMarker='o'
-        theColor='black'
+        theSize=12
+        theAlpha=.5
+
+        # defining the marker
+        if metaData[sampleID]['co2'] == 400:
+            theMarker='o'
+        elif metaData[sampleID]['co2'] == 800:
+            theMarker='s'
+        else:
+            print 'error defining markers from newSpaceMapper'
+
+        # defining the color
+        if metaData[sampleID]['growth'] == 1:
+            theColor='blue'
+        elif metaData[sampleID]['growth'] == 2:
+            theColor='green'
+        elif metaData[sampleID]['growth'] == 3:
+            theColor='gold'
+        elif metaData[sampleID]['growth'] == 4:
+            theColor='orange'
+        elif metaData[sampleID]['growth'] == 5:
+            theColor='red'
 
         theDay=sampleID.split('.')[1].replace('Day','')
 
-        ax.plot(x,y,marker=theMarker,mew=1,color=theColor,ms=theSize,alpha=theAlpha,mec='None',zorder=10)
-        ax.plot(x,y+0.125,marker="$%s$"%theDay)
-
-    # connecting the dots
-    sortedSamples=['X800.Day1.Lt', 'X800.Day1.Dk', 'X800.Day2.Lt', 'X800.Day2.Dk', 'X800.Day3.Lt', 'X800.Day3.Dk', 'X800.Day4.Lt', 'X800.Day4.Dk', 'X800.Day5.Dk']
-    
-    for i in range(len(sortedSamples)-1):
-        initial=sortedSamples[i]
-        last=sortedSamples[i+1]
-        a,b=newCoordinateCalculator(initial)
-        c,d=newCoordinateCalculator(last)
-        ax.plot([a,c],[b,d],':k',zorder=5,alpha=0.75)
-    
+        ax.plot(x,y,marker=theMarker,mew=0.,color=theColor,ms=theSize,alpha=theAlpha,zorder=10)
+        ax.plot(x,y,marker="$%s$"%theDay,zorder=20)
 
     # setting ranges
     matplotlib.pyplot.xlim([-2.,2.])
@@ -435,7 +442,7 @@ def newSpaceMapper(flag):
     matplotlib.pyplot.plot([1,1],[1,-1],color='magenta',alpha=0.5,lw=2.)
     matplotlib.pyplot.plot([-1,1],[-1,-1],color='magenta',alpha=0.5,lw=2.)
 
-    matplotlib.pyplot.savefig('sampleLocation.%s.pdf'%(str(int(flag))))
+    matplotlib.pyplot.savefig('sampleLocation.all.pdf')
     matplotlib.pyplot.clf()
        
     return None
@@ -518,7 +525,7 @@ borders=boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
 
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
 print 'mapping samples into new space...'
-newSpaceMapper('800')
+newSpaceMapper()
 
 # 4. final message
 print '... analysis completed.'
