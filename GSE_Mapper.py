@@ -355,13 +355,13 @@ def newCoordinateCalculator(sampleID):
     
     return x,y
 
-def newSpaceMapper():
+def newSpaceMapper(flag):
 
     '''
     this function plots the samples into a new space
     '''
 
-    preselectedSamples=[sampleID for sampleID in metaData.keys()]
+    preselectedSamples=[sampleID for sampleID in metaData.keys() if metaData[sampleID]['co2'] == flag]
     print 'selected ', len(preselectedSamples), 'samples for plotting.'
 
     # starting the figure
@@ -373,32 +373,22 @@ def newSpaceMapper():
         x,y=newCoordinateCalculator(sampleID)
         print sampleID,x,y
         
-        theSize=12
-        theAlpha=.5
-
-        # defining the marker
-        if metaData[sampleID]['co2'] == 400:
-            theMarker='o'
-        elif metaData[sampleID]['co2'] == 800:
-            theMarker='s'
-        else:
-            print 'error defining markers from newSpaceMapper'
+        theSize=16
+        theAlpha=.85
+        theMarker='o'
 
         # defining the color
-        if metaData[sampleID]['growth'] == 1:
-            theColor='blue'
-        elif metaData[sampleID]['growth'] == 2:
-            theColor='green'
-        elif metaData[sampleID]['growth'] == 3:
-            theColor='gold'
-        elif metaData[sampleID]['growth'] == 4:
+        if metaData[sampleID]['diurnal'] == 'light':
             theColor='orange'
-        elif metaData[sampleID]['growth'] == 5:
-            theColor='red'
+        elif metaData[sampleID]['diurnal'] == 'dark':
+            theColor='green'
+        else:
+            print 'error selecting the color from newSpaceMapper.'
+            sys.exit()
 
         theDay=sampleID.split('.')[1].replace('Day','')
 
-        ax.plot(x,y,marker=theMarker,mew=0.,color=theColor,ms=theSize,alpha=theAlpha,zorder=10)
+        ax.plot(x,y,marker=theMarker,mew=2.,mec=theColor,mfc='None',ms=theSize,alpha=theAlpha,zorder=10)
         ax.plot(x,y,marker="$%s$"%theDay,zorder=20)
 
     # setting ranges
@@ -411,38 +401,25 @@ def newSpaceMapper():
     matplotlib.pyplot.tight_layout(pad=2.5)
 
     # defining health zones
-    matplotlib.pyplot.plot([-2,-1],[1,1],color='black',alpha=0.2)
-    matplotlib.pyplot.plot([-1,-1],[1,2],color='black',alpha=0.2)
+    matplotlib.pyplot.plot([-2,-1],[1,1],color='black')
+    matplotlib.pyplot.plot([-1,-1],[1,2],color='black')
 
-    matplotlib.pyplot.plot([2,1],[1,1],color='black',alpha=0.2)
-    matplotlib.pyplot.plot([1,1],[1,2],color='black',alpha=0.2)
+    matplotlib.pyplot.plot([2,1],[1,1],color='black')
+    matplotlib.pyplot.plot([1,1],[1,2],color='black')
 
-    matplotlib.pyplot.plot([2,1],[-1,-1],color='black',alpha=0.2)
-    matplotlib.pyplot.plot([1,1],[-1,-2],color='black',alpha=0.2)
+    matplotlib.pyplot.plot([2,1],[-1,-1],color='black')
+    matplotlib.pyplot.plot([1,1],[-1,-2],color='black')
 
-    matplotlib.pyplot.plot([-2,-1],[-1,-1],color='black',alpha=0.2)
-    matplotlib.pyplot.plot([-1,-1],[-1,-2],color='black',alpha=0.2)
-
-    # defining the grid lines
-    matplotlib.pyplot.plot([-1.5,-1.5],[1,2],color='black',ls=':',alpha=0.4)
-    matplotlib.pyplot.plot([-2,-1],[1.5,1.5],color='black',ls=':',alpha=0.4)
-
-    matplotlib.pyplot.plot([-1.5,-1.5],[-1,-2],color='black',ls=':',alpha=0.4)
-    matplotlib.pyplot.plot([-2,-1],[-1.5,-1.5],color='black',ls=':',alpha=0.4)
-
-    matplotlib.pyplot.plot([1.5,1.5],[-1,-2],color='black',ls=':',alpha=0.4)
-    matplotlib.pyplot.plot([2,1],[-1.5,-1.5],color='black',ls=':',alpha=0.4)
-
-    matplotlib.pyplot.plot([1.5,1.5],[1,2],color='black',ls=':',alpha=0.4)
-    matplotlib.pyplot.plot([2,1],[1.5,1.5],color='black',ls=':',alpha=0.4)
+    matplotlib.pyplot.plot([-2,-1],[-1,-1],color='black')
+    matplotlib.pyplot.plot([-1,-1],[-1,-2],color='black')
 
     # defining the misregulation zone
-    matplotlib.pyplot.plot([-1,-1],[-1,1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([-1,1],[1,1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([1,1],[1,-1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([-1,1],[-1,-1],color='magenta',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([-1,-1],[-1,1],color='red',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([-1,1],[1,1],color='red',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([1,1],[1,-1],color='red',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([-1,1],[-1,-1],color='red',alpha=0.5,lw=2.)
 
-    matplotlib.pyplot.savefig('sampleLocation.all.pdf')
+    matplotlib.pyplot.savefig('sampleLocation.%s.pdf'%str(flag))
     matplotlib.pyplot.clf()
        
     return None
@@ -525,7 +502,8 @@ borders=boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
 
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
 print 'mapping samples into new space...'
-newSpaceMapper()
+newSpaceMapper(400)
+newSpaceMapper(800)
 
 # 4. final message
 print '... analysis completed.'
