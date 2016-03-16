@@ -1,7 +1,7 @@
 # viridis
 Tools for quantifying gene expression in diatoms.  
     
-The natural analysis would follow as:   
+The natural order for the analysis would follow as:   
 
 #### cleaning reads
 readsCleaner.py: script to call Trimmomatic and clean the reads.
@@ -21,8 +21,7 @@ classifiersFinder.py: script that calls cuffdiff to find DETs between two condit
 #### visualizing samples
 samplesCorrelationGrapher.py: script to compute and plot the correlation among samples.  
 pcaGrapher.py: script to compute the PCA on expression values in FPKM.  
-sampleMapper.py: script to map samples in diurnal, growth space trained in epochs 0 and 1.  
-sampleMapper_epoch0.py: script to map samples in diurnal, growth space trained only in epoch 0.  
+sampleMapper.py: script to map samples into diurnal and growth coordinates.  
 GSE_Mapper.py: script to map samples into diurnal and growth space from microarray data.  
 
 #### misc
