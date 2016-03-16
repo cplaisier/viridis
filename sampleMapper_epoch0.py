@@ -21,16 +21,16 @@ def addArrows():
 
     return None
 
-def boxPlotGrapher(classifiers,borders,flag):
+def bordersCalculator(classifiers,borders,flag):
 
     '''
-    this function plots the expression of the classifiers in log10 scale using boxplots
+    this function computes the borders of the descriptors in log10 scale
     '''
 
-    # 0. defining a variable for recapitulating the data borders necessary for mapping samples into new space
+    # f.0. defining a variable for recapitulating the data borders necessary for mapping samples into new space
     borders[flag]={}
     
-    # 1. defining the expression values
+    # f.1. defining the expression values
     if flag == 'light':
         expressionA=expressionRetriever(classifiers,flag,'AM')
         expressionB=expressionRetriever(classifiers,flag,'PM')        
@@ -41,14 +41,12 @@ def boxPlotGrapher(classifiers,borders,flag):
         print 'error handling flags from boxPlotGrapher'
         sys.exit()
 
-    # 3. plotting and recovering the info for the mapping samples
-    boxPlotPosition=0
+    # f.2. recovering the info for the mapping samples
     listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True) # ranking the classifiers
     for geneID in listOfClassifiers:
-        boxPlotPosition=boxPlotPosition+1
         borders[flag][geneID]={}
         
-        # 3.1 transforming into log10 scale
+        # f.2.1 transforming into log10 scale
         x=numpy.array(expressionA[geneID])
         y=numpy.array(expressionB[geneID])
 
@@ -58,45 +56,162 @@ def boxPlotGrapher(classifiers,borders,flag):
         logx=numpy.log10(x)
         logy=numpy.log10(y)
 
-        # 3.2. actual plotting
-        if boxplotPlotting == True:
-            bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-            setBoxColors(bp,'orange')
-            bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-            setBoxColors(bp,'darkgreen')
-
-        # 3.3. saving the info for the mapping samples
+        # f.2.2. saving the info for the mapping samples
         xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
         ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy); sdy=numpy.std(logy)
         if xb > yb:
             center=((xa-yc)/2.)+yc
         else:
             center=((ya-xc)/2.)+xc
-        # incorporating the data
+        # f.2.3. incorporating the data
         #! w=weightRankCalculator(geneID,listOfClassifiers)
-        w=weightNMLCalculator(geneID,flag)
-        if flag == 'light':
-            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
-        elif flag == 'growth':
-            borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
-        else:
-            print 'error handling flags from boxPlotGrapher (bis)'
-            sys.exit()
+        w=weightProportionalCalculator(geneID,flag)
+        borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
         
-    # 3.3. closing the figure
-    if boxplotPlotting == True:
-        matplotlib.pyplot.xlim([0,boxPlotPosition+1])
-        matplotlib.pyplot.ylim([-0.2,5.])
-        theXticks=range(boxPlotPosition)
-        theXticksPosition=[element+1 for element in theXticks]
-        matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=2)
-        matplotlib.pyplot.ylabel('log10 FPKM')
-        matplotlib.pyplot.tight_layout(pad=2.5)
-        #! matplotlib.pyplot.subplots_adjust(left=0.05, right=0.99, top=0.95, bottom=0.33)
-        matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
-        matplotlib.pyplot.clf()
-
     return borders
+
+def boxPlotGrapher(classifiers,borders,flag):
+
+    '''
+    this function plots the expression of the classifiers in log10 scale using boxplots
+    '''
+
+    # f.0. retrieving the expression data
+    if flag == 'light':
+        expressionA=expressionRetriever(classifiers,flag,'AM')
+        expressionB=expressionRetriever(classifiers,flag,'PM')        
+    elif flag == 'growth':
+        expressionA=expressionRetriever(classifiers,flag,'exp')
+        expressionB=expressionRetriever(classifiers,flag,'sta')
+    else:
+        print 'error handling flags from boxPlotGrapher'
+        sys.exit()
+
+    listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True) # ranking the classifiers
+    
+    # f.1. computing the general figure of boxplots with all descriptors
+    boxPlotPosition=0
+    for geneID in listOfClassifiers:
+        boxPlotPosition=boxPlotPosition+1
+        
+        x=numpy.array(expressionA[geneID])
+        y=numpy.array(expressionB[geneID])
+
+        x=x+1.
+        y=y+1.
+
+        logx=numpy.log10(x)
+        logy=numpy.log10(y)
+
+        bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
+        setBoxColors(bp,'orange')
+        bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
+        setBoxColors(bp,'darkgreen')
+
+    # closing the figure
+    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+    matplotlib.pyplot.ylim([-0.2,5.])
+    theXticks=range(boxPlotPosition)
+    theXticksPosition=[element+1 for element in theXticks]
+    theFontSize=int(600./len(listOfClassifiers))
+    matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=theFontSize)
+    matplotlib.pyplot.ylabel('log10 FPKM')
+    matplotlib.pyplot.tight_layout(pad=2.5)
+    #! matplotlib.pyplot.subplots_adjust(left=0.05, right=0.99, top=0.95, bottom=0.33)
+    matplotlib.pyplot.savefig('figures/boxplots_%s.pdf'%flag)
+    matplotlib.pyplot.clf()
+
+    # f.2. computing the figures for specific AM/exp or PM/sta descriptors
+
+    # AM/exp
+    boxPlotPosition=0
+    names=[]
+    borA=[]
+    borB=[]
+    for geneID in listOfClassifiers:
+        
+        x=numpy.array(expressionA[geneID])
+        y=numpy.array(expressionB[geneID])
+
+        x=x+1.
+        y=y+1.
+
+        logx=numpy.log10(x)
+        logy=numpy.log10(y)
+
+        xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
+        ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy); sdy=numpy.std(logy)
+
+        if xb > yb:
+            boxPlotPosition=boxPlotPosition+1
+            borA.append(xa); borB.append(yc)
+            
+            bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'orange')
+            bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'darkgreen')
+            names.append(geneID)
+
+    # closing the figure
+    matplotlib.pyplot.plot(range(1,len(names)+1),borA,'-',color='magenta',lw=.1,alpha=0.5)
+    matplotlib.pyplot.plot(range(1,len(names)+1),borB,'-',color='magenta',lw=.1,alpha=0.5)
+    
+    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+    matplotlib.pyplot.ylim([-0.2,5.])
+    theXticks=range(boxPlotPosition)
+    theXticksPosition=[element+1 for element in theXticks]
+    theFontSize=int(600./len(names))
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=-90,fontsize=theFontSize)
+    matplotlib.pyplot.ylabel('log10 FPKM')
+    matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.savefig('figures/boxplots_%s.trend.up.pdf'%flag)
+    matplotlib.pyplot.clf()
+
+    # PM/sta
+    boxPlotPosition=0
+    names=[]
+    borA=[]
+    borB=[]
+    for geneID in listOfClassifiers:
+        
+        x=numpy.array(expressionA[geneID])
+        y=numpy.array(expressionB[geneID])
+
+        x=x+1.
+        y=y+1.
+
+        logx=numpy.log10(x)
+        logy=numpy.log10(y)
+
+        xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
+        ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy); sdy=numpy.std(logy)
+
+        if xb < yb:
+            boxPlotPosition=boxPlotPosition+1
+            borA.append(xc); borB.append(ya)
+            
+            bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'orange')
+            bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'darkgreen')
+            names.append(geneID)
+
+    # closing the figure
+    matplotlib.pyplot.plot(range(1,len(names)+1),borA,'-',color='magenta',lw=.1,alpha=0.5)
+    matplotlib.pyplot.plot(range(1,len(names)+1),borB,'-',color='magenta',lw=.1,alpha=0.5)
+    
+    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+    matplotlib.pyplot.ylim([-0.2,5.])
+    theXticks=range(boxPlotPosition)
+    theXticksPosition=[element+1 for element in theXticks]
+    theFontSize=int(600./len(names))
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=-90,fontsize=theFontSize)
+    matplotlib.pyplot.ylabel('log10 FPKM')
+    matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.savefig('figures/boxplots_%s.trend.down.pdf'%flag)
+    matplotlib.pyplot.clf()
+
+    return None
 
 def classifiersFilter(classifiers,flag):
 
@@ -129,7 +244,9 @@ def classifiersFilter(classifiers,flag):
         logx=numpy.log10(x)
         logy=numpy.log10(y)
 
-        # defining the separation
+        # computing a relative separation: it should be larger than the average of the standard deviations of the two distributions
+        averageSD=0.5*numpy.std(logx) + 0.5*numpy.std(logy)
+        
         if numpy.mean(logx) > numpy.mean(logy):
             separation=numpy.min(logx)-numpy.max(logy)
         elif numpy.mean(logy) > numpy.mean(logx):
@@ -137,7 +254,7 @@ def classifiersFilter(classifiers,flag):
         else:
             print 'error computing the separation between the two distributions from classifiersFilter'
             sys.exit()
-        if separation > 0.:
+        if separation > averageSD:
             separations[geneID]=separation
 
     return separations
@@ -202,13 +319,24 @@ def classifiersWriter(selected,flag):
 
     accW=0.
     rank=0
+    allW=[]
     f.write('#rank\tgeneID\tW\taccW\n')
     for element in sortedList:
         rank=rank+1
         localW=borders[flag][element][-3]
         accW=accW+localW
+        allW.append(localW)
         f.write('%s\t%s\t%.4f\t%.4f\n'%(rank,element,localW,accW))
     f.close()
+
+    # f.3. making a plot of the distribution of weights
+    figureFile='figures/weightDistribution.%s.pdf'%flag
+    x=range(1,len(allW)+1)
+    matplotlib.pyplot.plot(x,allW,'o-',color='black')
+    matplotlib.pyplot.xlabel('rank')
+    matplotlib.pyplot.ylabel('relative weight')
+    matplotlib.pyplot.savefig(figureFile)
+    matplotlib.pyplot.clf()
 
     return None
 
@@ -233,7 +361,7 @@ def distanceCalculator(sampleID):
 
     value=0.5*sepx+0.5*sepy
     #! value=numpy.sqrt(sepx**2+sepy**2)
-    value=sepx
+    #! value=sepx
 
     #try making each boxplot being one, total 3
 
@@ -275,6 +403,8 @@ def ellipseSizeCalculator(flag1,flag2):
             position=0.
         value=position*weight
         averageDispersion=averageDispersion+value
+
+    print 'dispersion found for',flag1,flag2,'conditions: ',averageDispersion
 
     return averageDispersion
 
@@ -584,7 +714,7 @@ def newSpaceMapper(flag):
     matplotlib.pyplot.yticks([-1.5,1.5],['late','early'],fontsize=24)
     matplotlib.pyplot.xlabel('diurnal phase',fontsize=24)
     matplotlib.pyplot.ylabel('growth phase',fontsize=24)
-    matplotlib.pyplot.tight_layout(pad=2.5)
+    #matplotlib.pyplot.tight_layout(pad=2.5)
     matplotlib.pyplot.title(flag+' ppm',fontsize=28)
 
     # defining health zones
@@ -619,9 +749,8 @@ def newSpaceMapper(flag):
     matplotlib.pyplot.plot([1,1],[1,-1],color='magenta',alpha=0.5,lw=2.)
     matplotlib.pyplot.plot([-1,1],[-1,-1],color='magenta',alpha=0.5,lw=2.)
 
-    matplotlib.pyplot.savefig('sampleLocation.%s.pdf'%(str(int(flag))))
+    matplotlib.pyplot.savefig('figures/sampleLocation.%s.pdf'%(str(int(flag))))
     matplotlib.pyplot.clf()
-
     
     return None
 
@@ -732,12 +861,12 @@ def oneDimensionTimeMapper():
     matplotlib.pyplot.xlim([0,13])
     matplotlib.pyplot.ylim([-1.5,2])
     
-    matplotlib.pyplot.savefig('distance.pdf')
+    matplotlib.pyplot.savefig('figures/distance.pdf')
     matplotlib.pyplot.clf()
 
     return None
 
-def weightNMLCalculator(geneID,flag):
+def weightProportionalCalculator(geneID,flag):
 
     '''
     this function computes the weight of the classifier based on the empty space between the classifiers
@@ -769,13 +898,15 @@ def weightRankCalculator(geneID,classifiers):
 ### MAIN
 
 # 0. preliminaries
+print 'welcome to sampleMapper'
+print
 print 'initializing variables...'
 # 0.1. user defined variables and paths
 cuffdiffDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cuffdiff/'
 expressionFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/allSamples/genes.fpkm_table.v2.txt'
 metaDataFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/metadata/metadata.v2.tsv'
 
-boxplotPlotting=False
+boxplotPlotting=True
 time300=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75])
 time1000=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75,15.45833333,15.79166667,17.41666667,17.79166667])
 
@@ -785,8 +916,12 @@ metaData=metadataReader()
 # 0.3. reading expression
 expression=expressionReader()
 
-# 1. recover the DET genes. Rank them on q-value and plot the boxplots. select the best ones.
-print 'recovering classifiers...'
+# 1. selecting descriptors
+print
+print 'selecting state descriptors...'
+
+# 1.1. recover the DET genes
+print 'recovering DETs...'
 
 lightClassifiers=classifiersRetriever('light_epoch0')
 print len(lightClassifiers),'light classifiers detected.'
@@ -795,30 +930,41 @@ growthClassifiers=classifiersRetriever('growth_epoch0')
 print len(growthClassifiers),'growth classifiers detected.'
 
 # 1.2. filtering the classifiers based on separation
-print 'filtering classifiers based on separation...'
+print
+print 'computing descriptors based on separation rules...'
 lightFilteredClassifiers=classifiersFilter(lightClassifiers,'light')
 growthFilteredClassifiers=classifiersFilter(growthClassifiers,'growth')
 print len(lightFilteredClassifiers),'filtered light classifiers.'
 print len(growthFilteredClassifiers),'filtered growth classifiers.'
 
 # 1.3. plotting a boxplots of the best classifiers
-print 'plotting expression graphs for classifiers...'
+print 'computing the border values for the descriptors...'
 borders={}
-borders=boxPlotGrapher(lightFilteredClassifiers,borders,'light')
-borders=boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
+borders=bordersCalculator(lightFilteredClassifiers,borders,'light')
+borders=bordersCalculator(growthFilteredClassifiers,borders,'growth')
 
+# 1.4. saving the classifiers
+print 'writing the descriptors...'
 classifiersWriter(lightFilteredClassifiers,'light')
 classifiersWriter(growthFilteredClassifiers,'growth')
 
+# 1.5. plotting the boxplots
+if boxplotPlotting == True:
+    print 'plotting expression graphs for descriptors...'
+    boxPlotGrapher(lightFilteredClassifiers,borders,'light')
+    boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
+
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
+print
 print 'mapping samples into new space...'
 newSpaceMapper('300')
+print
 newSpaceMapper('1000')
 
 # 3. map samples into a 1D variable
-print 'mapping samples into 1D space...'
-oneDimensionTimeMapper()
+#print 'mapping samples into 1D space...'
+#oneDimensionTimeMapper()
 
 # 4. final message
+print
 print '... analysis completed.'
-        
