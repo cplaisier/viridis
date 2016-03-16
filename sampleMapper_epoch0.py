@@ -91,6 +91,7 @@ def boxPlotGrapher(classifiers,borders,flag):
     
     # f.1. computing the general figure of boxplots with all descriptors
     boxPlotPosition=0
+    names=[]
     for geneID in listOfClassifiers:
         boxPlotPosition=boxPlotPosition+1
         
@@ -108,16 +109,20 @@ def boxPlotGrapher(classifiers,borders,flag):
         bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
         setBoxColors(bp,'darkgreen')
 
+        name=geneID.split('Thaps')[1]
+        names.append(name)
+
     # closing the figure
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
     matplotlib.pyplot.ylim([-0.2,5.])
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
     theFontSize=int(600./len(listOfClassifiers))
-    matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=theFontSize)
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=2.5)
-    #! matplotlib.pyplot.subplots_adjust(left=0.05, right=0.99, top=0.95, bottom=0.33)
+    matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
+    matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
     matplotlib.pyplot.savefig('figures/boxplots_%s.pdf'%flag)
     matplotlib.pyplot.clf()
 
@@ -150,20 +155,29 @@ def boxPlotGrapher(classifiers,borders,flag):
             setBoxColors(bp,'orange')
             bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
             setBoxColors(bp,'darkgreen')
-            names.append(geneID)
+
+            name=geneID.split('Thaps')[1]
+            names.append(name)
 
     # closing the figure
-    matplotlib.pyplot.plot(range(1,len(names)+1),borA,'-',color='magenta',lw=.1,alpha=0.5)
-    matplotlib.pyplot.plot(range(1,len(names)+1),borB,'-',color='magenta',lw=.1,alpha=0.5)
+    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='magenta',alpha=0.2,edgecolor='None')
     
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
     matplotlib.pyplot.ylim([-0.2,5.])
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
     theFontSize=int(600./len(names))
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=-90,fontsize=theFontSize)
+    if flag == 'light':
+        theFontSize=14
+        matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
+        matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
+        matplotlib.pyplot.legend()
+        matplotlib.pyplot.ylim([-0.1,4.25])
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
+    matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
     matplotlib.pyplot.savefig('figures/boxplots_%s.trend.up.pdf'%flag)
     matplotlib.pyplot.clf()
 
@@ -194,20 +208,29 @@ def boxPlotGrapher(classifiers,borders,flag):
             setBoxColors(bp,'orange')
             bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
             setBoxColors(bp,'darkgreen')
-            names.append(geneID)
+            
+            name=geneID.split('Thaps')[1]
+            names.append(name)
 
     # closing the figure
-    matplotlib.pyplot.plot(range(1,len(names)+1),borA,'-',color='magenta',lw=.1,alpha=0.5)
-    matplotlib.pyplot.plot(range(1,len(names)+1),borB,'-',color='magenta',lw=.1,alpha=0.5)
+    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='magenta',alpha=0.2,edgecolor='None')
     
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
     matplotlib.pyplot.ylim([-0.2,5.])
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
     theFontSize=int(600./len(names))
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=-90,fontsize=theFontSize)
+    if flag == 'light':
+        theFontSize=14
+        matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
+        matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
+        matplotlib.pyplot.legend()
+        matplotlib.pyplot.ylim([-0.1,4.25])
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
+    matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
     matplotlib.pyplot.savefig('figures/boxplots_%s.trend.down.pdf'%flag)
     matplotlib.pyplot.clf()
 
@@ -712,9 +735,8 @@ def newSpaceMapper(flag):
     matplotlib.pyplot.ylim([-2.,2.])
     matplotlib.pyplot.xticks([-1.5,1.5],['light','dark'],fontsize=24)
     matplotlib.pyplot.yticks([-1.5,1.5],['late','early'],fontsize=24)
-    matplotlib.pyplot.xlabel('diurnal phase',fontsize=24)
+    matplotlib.pyplot.xlabel('diurnal cycle',fontsize=24)
     matplotlib.pyplot.ylabel('growth phase',fontsize=24)
-    #matplotlib.pyplot.tight_layout(pad=2.5)
     matplotlib.pyplot.title(flag+' ppm',fontsize=28)
 
     # defining health zones
@@ -749,6 +771,10 @@ def newSpaceMapper(flag):
     matplotlib.pyplot.plot([1,1],[1,-1],color='magenta',alpha=0.5,lw=2.)
     matplotlib.pyplot.plot([-1,1],[-1,-1],color='magenta',alpha=0.5,lw=2.)
 
+    # aspect
+    matplotlib.pyplot.tight_layout()
+    matplotlib.pyplot.axes().set_aspect('equal')
+    #matplotlib.pyplot.subplots_adjust(left=0.21,right=0.79,bottom=0.17,top=0.93)
     matplotlib.pyplot.savefig('figures/sampleLocation.%s.pdf'%(str(int(flag))))
     matplotlib.pyplot.clf()
     
@@ -761,7 +787,7 @@ def setBoxColors(bp,theColor):
     '''
 
     matplotlib.pyplot.setp(bp['boxes'],color=theColor)
-    matplotlib.pyplot.setp(bp['caps'],color=theColor)
+    matplotlib.pyplot.setp(bp['caps'],color='None')
     matplotlib.pyplot.setp(bp['whiskers'],color=theColor,ls='-')
     matplotlib.pyplot.setp(bp['fliers'],markeredgecolor=theColor,marker='+')
     matplotlib.pyplot.setp(bp['medians'],color=theColor)    
@@ -852,7 +878,6 @@ def oneDimensionTimeMapper():
     
     matplotlib.pyplot.xlabel('epoch',fontsize=24)
     matplotlib.pyplot.ylabel('state',fontsize=24)
-    #! matplotlib.pyplot.tight_layout(pad=2.5)
     matplotlib.pyplot.subplots_adjust(left=0.2, right=0.95, top=0.9, bottom=0.11)
 
     matplotlib.pyplot.xticks((2.5,6.5,10.5),('0','1','2'))
@@ -936,6 +961,7 @@ lightFilteredClassifiers=classifiersFilter(lightClassifiers,'light')
 growthFilteredClassifiers=classifiersFilter(growthClassifiers,'growth')
 print len(lightFilteredClassifiers),'filtered light classifiers.'
 print len(growthFilteredClassifiers),'filtered growth classifiers.'
+print
 
 # 1.3. plotting a boxplots of the best classifiers
 print 'computing the border values for the descriptors...'
