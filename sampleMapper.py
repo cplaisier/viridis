@@ -1,6 +1,6 @@
-### this script locates all epochs samples into a light vs. growth space characterized in epoch=0
+### this script locates all epochs samples into a diurnal vs. growth space characterized in epoch=0
 
-import sys,numpy,matplotlib,random
+import sys,numpy,matplotlib,random,pickle
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
 
@@ -21,7 +21,7 @@ def addArrows():
 
     return None
 
-def bordersCalculator(classifiers,borders,flag):
+def bordersCalculator(descriptors,borders,flag):
 
     '''
     this function computes the borders of the descriptors in log10 scale
@@ -31,19 +31,19 @@ def bordersCalculator(classifiers,borders,flag):
     borders[flag]={}
     
     # f.1. defining the expression values
-    if flag == 'light':
-        expressionA=expressionRetriever(classifiers,flag,'AM')
-        expressionB=expressionRetriever(classifiers,flag,'PM')        
+    if flag == 'diurnal':
+        expressionA=expressionRetriever(descriptors,flag,'AM')
+        expressionB=expressionRetriever(descriptors,flag,'PM')        
     elif flag == 'growth':
-        expressionA=expressionRetriever(classifiers,flag,'exp')
-        expressionB=expressionRetriever(classifiers,flag,'sta')
+        expressionA=expressionRetriever(descriptors,flag,'exp')
+        expressionB=expressionRetriever(descriptors,flag,'sta')
     else:
         print 'error handling flags from boxPlotGrapher'
         sys.exit()
 
     # f.2. recovering the info for the mapping samples
-    listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True) # ranking the classifiers
-    for geneID in listOfClassifiers:
+    listOfDescriptors=sorted(descriptors,key=descriptors.__getitem__,reverse=True) # ranking the descriptors
+    for geneID in listOfDescriptors:
         borders[flag][geneID]={}
         
         # f.2.1 transforming into log10 scale
@@ -64,35 +64,35 @@ def bordersCalculator(classifiers,borders,flag):
         else:
             center=((ya-xc)/2.)+xc
         # f.2.3. incorporating the data
-        #! w=weightRankCalculator(geneID,listOfClassifiers)
+        #! w=weightRankCalculator(geneID,listOfDescriptors)
         w=weightProportionalCalculator(geneID,flag)
         borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
         
     return borders
 
-def boxPlotGrapher(classifiers,borders,flag):
+def boxPlotGrapher(descriptors,borders,flag):
 
     '''
-    this function plots the expression of the classifiers in log10 scale using boxplots
+    this function plots the expression of the descriptors in log10 scale using boxplots
     '''
 
     # f.0. retrieving the expression data
-    if flag == 'light':
-        expressionA=expressionRetriever(classifiers,flag,'AM')
-        expressionB=expressionRetriever(classifiers,flag,'PM')        
+    if flag == 'diurnal':
+        expressionA=expressionRetriever(descriptors,flag,'AM')
+        expressionB=expressionRetriever(descriptors,flag,'PM')        
     elif flag == 'growth':
-        expressionA=expressionRetriever(classifiers,flag,'exp')
-        expressionB=expressionRetriever(classifiers,flag,'sta')
+        expressionA=expressionRetriever(descriptors,flag,'exp')
+        expressionB=expressionRetriever(descriptors,flag,'sta')
     else:
         print 'error handling flags from boxPlotGrapher'
         sys.exit()
 
-    listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True) # ranking the classifiers
+    listOfDescriptors=sorted(descriptors,key=descriptors.__getitem__,reverse=True) # ranking the descriptors
     
     # f.1. computing the general figure of boxplots with all descriptors
     boxPlotPosition=0
     names=[]
-    for geneID in listOfClassifiers:
+    for geneID in listOfDescriptors:
         boxPlotPosition=boxPlotPosition+1
         
         x=numpy.array(expressionA[geneID])
@@ -117,7 +117,7 @@ def boxPlotGrapher(classifiers,borders,flag):
     matplotlib.pyplot.ylim([-0.2,5.])
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
-    theFontSize=int(600./len(listOfClassifiers))
+    theFontSize=int(600./len(listOfDescriptors))
     matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=2.5)
@@ -133,7 +133,7 @@ def boxPlotGrapher(classifiers,borders,flag):
     names=[]
     borA=[]
     borB=[]
-    for geneID in listOfClassifiers:
+    for geneID in listOfDescriptors:
         
         x=numpy.array(expressionA[geneID])
         y=numpy.array(expressionB[geneID])
@@ -167,7 +167,7 @@ def boxPlotGrapher(classifiers,borders,flag):
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
     theFontSize=int(600./len(names))
-    if flag == 'light':
+    if flag == 'diurnal':
         theFontSize=14
         matplotlib.pyplot.ylim([-0.1,4.25])
     else:
@@ -188,7 +188,7 @@ def boxPlotGrapher(classifiers,borders,flag):
     names=[]
     borA=[]
     borB=[]
-    for geneID in listOfClassifiers:
+    for geneID in listOfDescriptors:
         
         x=numpy.array(expressionA[geneID])
         y=numpy.array(expressionB[geneID])
@@ -222,7 +222,7 @@ def boxPlotGrapher(classifiers,borders,flag):
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
     theFontSize=int(600./len(names))
-    if flag == 'light':
+    if flag == 'diurnal':
         theFontSize=14
         matplotlib.pyplot.ylim([-0.1,4.25])
     else:
@@ -240,26 +240,26 @@ def boxPlotGrapher(classifiers,borders,flag):
 
     return None
 
-def classifiersFilter(classifiers,flag):
+def descriptorsFilter(descriptors,flag):
 
     '''
-    this function selects the classifiers that have at least separation between max and min values into the two cases in log space
+    this function selects the descriptors that have at least separation between max and min values into the two cases in log space
     '''
     
     # 1. defining the expression values
-    if flag == 'light':
-        selectedExpressionA=expressionRetriever(classifiers,flag,'AM')
-        selectedExpressionB=expressionRetriever(classifiers,flag,'PM')
+    if flag == 'diurnal':
+        selectedExpressionA=expressionRetriever(descriptors,flag,'AM')
+        selectedExpressionB=expressionRetriever(descriptors,flag,'PM')
     elif flag == 'growth':
-        selectedExpressionA=expressionRetriever(classifiers,flag,'exp')
-        selectedExpressionB=expressionRetriever(classifiers,flag,'sta')
+        selectedExpressionA=expressionRetriever(descriptors,flag,'exp')
+        selectedExpressionB=expressionRetriever(descriptors,flag,'sta')
     else:
         print 'error handling flags from boxPlotGrapher'
         sys.exit()
 
     # 2. computing the distances
     separations={}
-    for geneID in classifiers: 
+    for geneID in descriptors: 
         
         # 2.1 transforming into log10 scale
         x=numpy.array(selectedExpressionA[geneID])
@@ -279,21 +279,21 @@ def classifiersFilter(classifiers,flag):
         elif numpy.mean(logy) > numpy.mean(logx):
             separation=numpy.min(logy)-numpy.max(logx)
         else:
-            print 'error computing the separation between the two distributions from classifiersFilter'
+            print 'error computing the separation between the two distributions from descriptorsFilter'
             sys.exit()
         if separation > averageSD:
             separations[geneID]=separation
 
     return separations
 
-def classifiersRetriever(flag):
+def descriptorsRetriever(flag):
 
     '''
     this function reads the output of cuffdiff and select the genes that pass the following rule: 1. log2 fold > 1., and 2. statistical significance
     '''
 
-    classifiersFolds={}
-    classifiersSignificances={}
+    descriptorsFolds={}
+    descriptorsSignificances={}
     
     inputFile=cuffdiffDir+'%s/gene_exp.diff'%flag
     with open(inputFile,'r') as f:
@@ -305,23 +305,23 @@ def classifiersRetriever(flag):
             foldChange=abs(float(vector[-5]))
             qValue=float(vector[-2])
             if significance == 'yes' and foldChange > 1.: # the selection rule is log2 fold > 1.0 and statistically different
-                classifiersFolds[geneName]=foldChange
-                classifiersSignificances[geneName]=qValue
-    # sorting classifiers
-    listOfClassifiers=sorted(classifiersFolds,key=classifiersFolds.__getitem__,reverse=True)
+                descriptorsFolds[geneName]=foldChange
+                descriptorsSignificances[geneName]=qValue
+    # sorting descriptors
+    listOfDescriptors=sorted(descriptorsFolds,key=descriptorsFolds.__getitem__,reverse=True)
 
-    return listOfClassifiers
+    return listOfDescriptors
 
-def classifiersWriter(selected,flag):
+def descriptorsWriter(selected,flag):
 
     '''
     this function writes the gene descriptors into a file
     '''
 
     # f.1. differentiating phases of descriptors
-    if flag == 'light':
-        f=open('descriptors/epoch0_lightDescriptors_AM_ranked.txt','w')
-        g=open('descriptors/epoch0_lightDescriptors_PM_ranked.txt','w')
+    if flag == 'diurnal':
+        f=open('descriptors/epoch0_diurnalDescriptors_AM_ranked.txt','w')
+        g=open('descriptors/epoch0_diurnalDescriptors_PM_ranked.txt','w')
     elif flag == 'growth':
         f=open('descriptors/epoch0_growthDescriptors_exp_ranked.txt','w')
         g=open('descriptors/epoch0_growthDescriptors_sta_ranked.txt','w')
@@ -339,8 +339,8 @@ def classifiersWriter(selected,flag):
     g.close()
 
     # f.2. adding the relative importance of each descriptor
-    if flag == 'light':
-        f=open('descriptors/epoch0_lightDescriptors_ranked.txt','w')
+    if flag == 'diurnal':
+        f=open('descriptors/epoch0_diurnalDescriptors_ranked.txt','w')
     elif flag == 'growth':
         f=open('descriptors/epoch0_growthDescriptors_ranked.txt','w')
 
@@ -365,6 +365,12 @@ def classifiersWriter(selected,flag):
     matplotlib.pyplot.savefig(figureFile)
     matplotlib.pyplot.clf()
 
+    # f.4 pickle the descriptors for other tools, like GSE_Mapper.py
+    jar=flag+'.pckl'
+    f=open(jar,'w')
+    pickle.dump(sortedList,f)
+    f.close()
+
     return None
 
 def distanceCalculator(sampleID):
@@ -373,12 +379,12 @@ def distanceCalculator(sampleID):
     this function calculates a single value measure of misregulation
     '''
 
-    diurnalLoad=loadCalculator(sampleID,'light')
+    diurnalLoad=loadCalculator(sampleID,'diurnal')
     growthLoad=loadCalculator(sampleID,'growth')
 
-    if metaData[sampleID]['light'] == 'AM':
+    if metaData[sampleID]['diurnal'] == 'AM':
         sepx=diurnalLoad
-    elif metaData[sampleID]['light'] == 'PM':
+    elif metaData[sampleID]['diurnal'] == 'PM':
         sepx=-diurnalLoad
 
     if metaData[sampleID]['growth'] == 'exp':
@@ -400,10 +406,10 @@ def ellipseSizeCalculator(flag1,flag2):
     this function calculates size of ellipsoids
     '''
 
-    if flag1 == 'light':
-        rankedDimensions=sorted(lightFilteredClassifiers,key=lightFilteredClassifiers.__getitem__,reverse=True)
+    if flag1 == 'diurnal':
+        rankedDimensions=sorted(diurnalFilteredDescriptors,key=diurnalFilteredDescriptors.__getitem__,reverse=True)
     elif flag1 == 'growth':
-        rankedDimensions=sorted(growthFilteredClassifiers,key=growthFilteredClassifiers.__getitem__,reverse=True)
+        rankedDimensions=sorted(growthFilteredDescriptors,key=growthFilteredDescriptors.__getitem__,reverse=True)
 
     averageDispersion=0.
     for transcript in rankedDimensions:
@@ -468,19 +474,19 @@ def loadCalculator(sampleID,flag):
 
     averageLoad=0.
     
-    for classifier in borders[flag].keys():
-        s=numpy.log10(expression[classifier][sampleID]+1.) # sample expression level
+    for descriptor in borders[flag].keys():
+        s=numpy.log10(expression[descriptor][sampleID]+1.) # sample expression level
 
-        a=borders[flag][classifier][0] # min of positive
-        b=borders[flag][classifier][1] # median of positive
-        c=borders[flag][classifier][2] # max of positive
+        a=borders[flag][descriptor][0] # min of positive
+        b=borders[flag][descriptor][1] # median of positive
+        c=borders[flag][descriptor][2] # max of positive
 
-        d=borders[flag][classifier][3] # min of negative
-        e=borders[flag][classifier][4] # median of negative
-        f=borders[flag][classifier][5] # max of negative
+        d=borders[flag][descriptor][3] # min of negative
+        e=borders[flag][descriptor][4] # median of negative
+        f=borders[flag][descriptor][5] # max of negative
 
-        NML=borders[flag][classifier][6] # No Man's Land
-        w=borders[flag][classifier][7] # weight
+        NML=borders[flag][descriptor][6] # No Man's Land
+        w=borders[flag][descriptor][7] # weight
         
         # differentiate if it's positive (AM,exp) or negative (PM,sta) or miss-regulated
         positive=None
@@ -575,7 +581,7 @@ def loadCalculator(sampleID,flag):
 
     return averageLoad
 
-def expressionRetriever(classifiers,flag,condition):
+def expressionRetriever(descriptors,flag,condition):
 
     '''
     this function returns the expression values for a set of genes under a specific condition
@@ -590,7 +596,7 @@ def expressionRetriever(classifiers,flag,condition):
                 
     # 2. defining the expression values
     selectedExpression={}
-    for geneName in classifiers:
+    for geneName in descriptors:
         selectedExpression[geneName]=[]
         for sampleID in selectedSamples:
             value=expression[geneName][sampleID]
@@ -616,7 +622,7 @@ def metadataReader():
                 if vector[0] != '':
                     epoch=int(vector[0])
                 growth=vector[1]
-                light=vector[2]
+                diurnal=vector[2]
                 co2=int(vector[3].replace(',',''))
                 replicate=vector[4]
                 preCollapse=bool(int(vector[5]))
@@ -624,7 +630,7 @@ def metadataReader():
                 metaData[sampleID]={}
                 metaData[sampleID]['growth']=growth
                 metaData[sampleID]['epoch']=epoch
-                metaData[sampleID]['light']=light
+                metaData[sampleID]['diurnal']=diurnal
                 metaData[sampleID]['co2']=co2
                 metaData[sampleID]['replicate']=replicate
                 metaData[sampleID]['pre-collapse']=preCollapse
@@ -634,10 +640,10 @@ def metadataReader():
 def newCoordinateCalculator(sampleID):
 
     '''
-    this function computes the new coordinates of a sample given the borders calculated from the filtered classifiers
+    this function computes the new coordinates of a sample given the borders calculated from the filtered descriptors
     '''
 
-    x=-loadCalculator(sampleID,'light')
+    x=-loadCalculator(sampleID,'diurnal')
     y=loadCalculator(sampleID,'growth')
     
     return x,y
@@ -663,7 +669,7 @@ def newSpaceMapper(flag):
         theAlpha=.85
 
         # defining the color depending on the light/dark
-        if metaData[sampleID]['light'] == 'AM':
+        if metaData[sampleID]['diurnal'] == 'AM':
             if metaData[sampleID]['replicate'] == 'A':
                 theColor='chocolate'
             elif metaData[sampleID]['replicate'] == 'B':
@@ -673,7 +679,7 @@ def newSpaceMapper(flag):
             else:
                 print 'error defining AM replicate at newSpaceMapper. exiting...'
                 sys.exit()
-        elif metaData[sampleID]['light'] == 'PM':
+        elif metaData[sampleID]['diurnal'] == 'PM':
             if metaData[sampleID]['replicate'] == 'A':
                 theColor='olive'
             elif metaData[sampleID]['replicate'] == 'B':
@@ -714,8 +720,8 @@ def newSpaceMapper(flag):
             ax.plot(x,y,marker='*',color='black',ms=3,zorder=10)
 
     # plotting the ellipses
-    a=ellipseSizeCalculator('light','AM')
-    b=ellipseSizeCalculator('light','PM')
+    a=ellipseSizeCalculator('diurnal','AM')
+    b=ellipseSizeCalculator('diurnal','PM')
     c=ellipseSizeCalculator('growth','exp')
     d=ellipseSizeCalculator('growth','sta')
 
@@ -822,7 +828,7 @@ def oneDimensionTimeMapper():
                 for diurnal in diurnals:
                     time=time+1
                     for sampleID in metaData.keys():
-                        if metaData[sampleID]['co2'] == co2level and metaData[sampleID]['epoch'] == epoch and metaData[sampleID]['growth'] == growth and metaData[sampleID]['light'] == diurnal:
+                        if metaData[sampleID]['co2'] == co2level and metaData[sampleID]['epoch'] == epoch and metaData[sampleID]['growth'] == growth and metaData[sampleID]['diurnal'] == diurnal:
                             if time in orderedSamples:
                                 orderedSamples[time].append(sampleID)
                             else:
@@ -898,28 +904,28 @@ def oneDimensionTimeMapper():
 def weightProportionalCalculator(geneID,flag):
 
     '''
-    this function computes the weight of the classifier based on the empty space between the classifiers
+    this function computes the weight of the descriptor based on the empty space between the descriptors
     '''
 
-    if flag == 'light':
-        sumSpaces=sum(lightFilteredClassifiers.values())
-        value=lightFilteredClassifiers[geneID]
+    if flag == 'diurnal':
+        sumSpaces=sum(diurnalFilteredDescriptors.values())
+        value=diurnalFilteredDescriptors[geneID]
     elif flag == 'growth':
-        sumSpaces=sum(growthFilteredClassifiers.values())
-        value=growthFilteredClassifiers[geneID]
+        sumSpaces=sum(growthFilteredDescriptors.values())
+        value=growthFilteredDescriptors[geneID]
 
     weight=value/sumSpaces
 
     return weight
 
-def weightRankCalculator(geneID,classifiers):
+def weightRankCalculator(geneID,descriptors):
 
     '''
-    this function computes the weight of the classifier based on its rank
+    this function computes the weight of the descriptor based on its rank
     '''
 
-    inverseRank=len(classifiers)-classifiers.index(geneID)
-    sumOfRanks=sum(numpy.arange(1.,len(classifiers)+1.))
+    inverseRank=len(descriptors)-descriptors.index(geneID)
+    sumOfRanks=sum(numpy.arange(1.,len(descriptors)+1.))
     weight=float(inverseRank)/sumOfRanks
 
     return weight
@@ -927,6 +933,7 @@ def weightRankCalculator(geneID,classifiers):
 ### MAIN
 
 # 0. preliminaries
+print
 print 'welcome to sampleMapper'
 print
 print 'initializing variables...'
@@ -935,7 +942,7 @@ cuffdiffDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoint
 expressionFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/allSamples/genes.fpkm_table.v2.txt'
 metaDataFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/metadata/metadata.v2.tsv'
 
-boxplotPlotting=True
+boxplotPlotting=False
 time300=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75])
 time1000=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75,15.45833333,15.79166667,17.41666667,17.79166667])
 
@@ -952,37 +959,37 @@ print 'selecting state descriptors...'
 # 1.1. recover the DET genes
 print 'recovering DETs...'
 
-lightClassifiers=classifiersRetriever('light_epoch0')
-print len(lightClassifiers),'light classifiers detected.'
+diurnalDescriptors=descriptorsRetriever('light_epoch0')
+print len(diurnalDescriptors),'diurnal descriptors detected.'
 
-growthClassifiers=classifiersRetriever('growth_epoch0')
-print len(growthClassifiers),'growth classifiers detected.'
+growthDescriptors=descriptorsRetriever('growth_epoch0')
+print len(growthDescriptors),'growth descriptors detected.'
 
-# 1.2. filtering the classifiers based on separation
+# 1.2. filtering the descriptors based on separation
 print
 print 'computing descriptors based on separation rules...'
-lightFilteredClassifiers=classifiersFilter(lightClassifiers,'light')
-growthFilteredClassifiers=classifiersFilter(growthClassifiers,'growth')
-print len(lightFilteredClassifiers),'filtered light classifiers.'
-print len(growthFilteredClassifiers),'filtered growth classifiers.'
+diurnalFilteredDescriptors=descriptorsFilter(diurnalDescriptors,'diurnal')
+growthFilteredDescriptors=descriptorsFilter(growthDescriptors,'growth')
+print len(diurnalFilteredDescriptors),'filtered diurnal descriptors.'
+print len(growthFilteredDescriptors),'filtered growth descriptors.'
 print
 
-# 1.3. plotting a boxplots of the best classifiers
+# 1.3. plotting a boxplots of the best descriptors
 print 'computing the border values for the descriptors...'
 borders={}
-borders=bordersCalculator(lightFilteredClassifiers,borders,'light')
-borders=bordersCalculator(growthFilteredClassifiers,borders,'growth')
+borders=bordersCalculator(diurnalFilteredDescriptors,borders,'diurnal')
+borders=bordersCalculator(growthFilteredDescriptors,borders,'growth')
 
-# 1.4. saving the classifiers
+# 1.4. saving the descriptors
 print 'writing the descriptors...'
-classifiersWriter(lightFilteredClassifiers,'light')
-classifiersWriter(growthFilteredClassifiers,'growth')
+descriptorsWriter(diurnalFilteredDescriptors,'diurnal')
+descriptorsWriter(growthFilteredDescriptors,'growth')
 
 # 1.5. plotting the boxplots
 if boxplotPlotting == True:
     print 'plotting expression graphs for descriptors...'
-    boxPlotGrapher(lightFilteredClassifiers,borders,'light')
-    boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
+    boxPlotGrapher(diurnalFilteredDescriptors,borders,'diurnal')
+    boxPlotGrapher(growthFilteredDescriptors,borders,'growth')
 
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
 print
@@ -998,3 +1005,4 @@ newSpaceMapper('1000')
 # 4. final message
 print
 print '... analysis completed.'
+print
