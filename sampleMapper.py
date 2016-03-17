@@ -168,14 +168,13 @@ def boxPlotGrapher(descriptors,borders,flag):
     theXticksPosition=[element+1 for element in theXticks]
     theFontSize=int(600./len(names))
     if flag == 'diurnal':
-        theFontSize=14
         matplotlib.pyplot.ylim([-0.1,4.25])
     else:
         matplotlib.pyplot.ylim([-0.1,4.75])
     matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
     matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
     matplotlib.pyplot.legend()
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=14)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=2.5)
     matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
@@ -223,14 +222,13 @@ def boxPlotGrapher(descriptors,borders,flag):
     theXticksPosition=[element+1 for element in theXticks]
     theFontSize=int(600./len(names))
     if flag == 'diurnal':
-        theFontSize=14
         matplotlib.pyplot.ylim([-0.1,4.25])
     else:
         matplotlib.pyplot.ylim([-0.1,4.75])
     matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
     matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
     matplotlib.pyplot.legend()
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=14)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=2.5)
     matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
@@ -271,7 +269,7 @@ def descriptorsFilter(descriptors,flag):
         logx=numpy.log10(x)
         logy=numpy.log10(y)
 
-        # computing a relative separation: it should be larger than the average of the standard deviations of the two distributions
+        # computing a separation threshold: it should be larger than the average of the standard deviations of the two distributions
         averageSD=0.5*numpy.std(logx) + 0.5*numpy.std(logy)
         
         if numpy.mean(logx) > numpy.mean(logy):

@@ -4,10 +4,10 @@ import sys,numpy,matplotlib,random,pickle
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
 
-def boxPlotGrapher(descriptors,borders,flag):
+def bordersCalculator(descriptors,borders,flag):
 
     '''
-    this function plots the expression of the descriptors in log10 scale using boxplots
+    this function computes the borders of the descriptors in log10 scale
     '''
 
     # 0. defining a variable for recapitulating the data borders necessary for mapping samples into new space
@@ -26,24 +26,13 @@ def boxPlotGrapher(descriptors,borders,flag):
         sys.exit()
 
     # 3. plotting and recovering the info for the mapping samples
-    boxPlotPosition=0
     listOfDescriptors=sorted(descriptors,key=descriptors.__getitem__,reverse=True) # ranking the descriptors
     for geneID in listOfDescriptors:
-        boxPlotPosition=boxPlotPosition+1
         borders[flag][geneID]={}
         
-        # 3.1 transforming into log10 scale
         x=numpy.array(expressionA[geneID])
         y=numpy.array(expressionB[geneID])
 
-        # 3.2. actual plotting
-        if boxplotPlotting == True:
-            bp=matplotlib.pyplot.boxplot([x],positions=[boxPlotPosition],patch_artist=True)
-            setBoxColors(bp,'orange')
-            bp=matplotlib.pyplot.boxplot([y],positions=[boxPlotPosition],patch_artist=True)
-            setBoxColors(bp,'darkgreen')
-
-        # 3.3. saving the info for the mapping samples
         xa=numpy.min(x); xb=numpy.median(x); xc=numpy.max(x); sdx=numpy.std(x)
         ya=numpy.min(y); yb=numpy.median(y); yc=numpy.max(y); sdy=numpy.std(y)
         if xb > yb:
@@ -60,19 +49,146 @@ def boxPlotGrapher(descriptors,borders,flag):
             print 'error handling flags from boxPlotGrapher (bis)'
             sys.exit()
         
-    # 3.3. closing the figure
-    if boxplotPlotting == True:
-        matplotlib.pyplot.xlim([0,boxPlotPosition+1])
-        #matplotlib.pyplot.ylim([-0.2,5.])
-        theXticks=range(boxPlotPosition)
-        theXticksPosition=[element+1 for element in theXticks]
-        matplotlib.pyplot.xticks(theXticksPosition,listOfDescriptors,rotation=-90,fontsize=2)
-        matplotlib.pyplot.ylabel('log2 fold')
-        matplotlib.pyplot.tight_layout(pad=2.5)
-        matplotlib.pyplot.savefig('figuresGSE/boxplots_%s.pdf'%flag)
-        matplotlib.pyplot.clf()
-
     return borders
+
+def boxPlotGrapher(descriptors,borders,flag):
+
+    '''
+    this function plots the expression of the descriptors in log10 scale using boxplots
+    '''
+
+    # 1. defining the expression values
+    if flag == 'diurnal':
+        expressionA=descriptorsExpressionRetriever(descriptors,flag,'light')
+        expressionB=descriptorsExpressionRetriever(descriptors,flag,'dark')           
+    elif flag == 'growth':
+        expressionA=descriptorsExpressionRetriever(descriptors,flag,[1,2])
+        expressionB=descriptorsExpressionRetriever(descriptors,flag,[4,5])
+    else:
+        print flag
+        print 'error handling flags from boxPlotGrapher'
+        sys.exit()
+
+    # 3. plotting and recovering the info for the mapping samples
+    boxPlotPosition=0
+    names=[]
+    listOfDescriptors=sorted(descriptors,key=descriptors.__getitem__,reverse=True) # ranking the descriptors
+    for geneID in listOfDescriptors:
+        boxPlotPosition=boxPlotPosition+1
+        
+        x=numpy.array(expressionA[geneID])
+        y=numpy.array(expressionB[geneID])
+
+        # 3.2. actual plotting
+        bp=matplotlib.pyplot.boxplot([x],positions=[boxPlotPosition],patch_artist=True)
+        setBoxColors(bp,'orange')
+        bp=matplotlib.pyplot.boxplot([y],positions=[boxPlotPosition],patch_artist=True)
+        setBoxColors(bp,'darkgreen')
+
+        name=geneID.split('_')[1]
+        names.append(name)
+        
+    # 3.3. closing the figure
+    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+    matplotlib.pyplot.ylim([-5.,5.])
+    theXticks=range(boxPlotPosition)
+    theXticksPosition=[element+1 for element in theXticks]
+    theFontSize=int(600./len(listOfDescriptors))
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
+    matplotlib.pyplot.ylabel('log2 fold')
+    matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
+    matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
+    matplotlib.pyplot.savefig('figuresGSE/boxplots_%s.pdf'%flag)
+    matplotlib.pyplot.clf()
+
+    # 4. computing the figures for specific AM/exp or PM/sta descriptors
+
+    # AM/exp
+    boxPlotPosition=0
+    names=[]
+    borA=[]
+    borB=[]
+    for geneID in listOfDescriptors:
+        
+        x=numpy.array(expressionA[geneID])
+        y=numpy.array(expressionB[geneID])
+
+        xa=numpy.min(x); xb=numpy.median(x); xc=numpy.max(x); sdx=numpy.std(x)
+        ya=numpy.min(y); yb=numpy.median(y); yc=numpy.max(y); sdy=numpy.std(y)
+
+        if xb > yb:
+            boxPlotPosition=boxPlotPosition+1
+            borA.append(xa); borB.append(yc)
+            
+            bp=matplotlib.pyplot.boxplot([x],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'orange')
+            bp=matplotlib.pyplot.boxplot([y],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'darkgreen')
+
+            name=geneID.split('_')[1]
+            names.append(name)
+
+    # closing the figure
+    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='magenta',alpha=0.2,edgecolor='None')
+    
+    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+    matplotlib.pyplot.ylim([-5.,5.])
+    theXticks=range(boxPlotPosition)
+    theXticksPosition=[element+1 for element in theXticks]
+    theFontSize=int(600./len(listOfDescriptors))
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=14)
+    matplotlib.pyplot.ylabel('log2 fold')
+    matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
+    matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
+    matplotlib.pyplot.savefig('figuresGSE/boxplots_%s.trend.up.pdf'%flag)
+    matplotlib.pyplot.clf()
+
+    # PM/sta
+    boxPlotPosition=0
+    names=[]
+    borA=[]
+    borB=[]
+    for geneID in listOfDescriptors:
+        
+        x=numpy.array(expressionA[geneID])
+        y=numpy.array(expressionB[geneID])
+
+        xa=numpy.min(x); xb=numpy.median(x); xc=numpy.max(x); sdx=numpy.std(x)
+        ya=numpy.min(y); yb=numpy.median(y); yc=numpy.max(y); sdy=numpy.std(y)
+
+        if xb < yb:
+            boxPlotPosition=boxPlotPosition+1
+            borA.append(xc); borB.append(ya)
+            
+            bp=matplotlib.pyplot.boxplot([x],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'orange')
+            bp=matplotlib.pyplot.boxplot([y],positions=[boxPlotPosition],patch_artist=True)
+            setBoxColors(bp,'darkgreen')
+
+            name=geneID.split('_')[1]
+            names.append(name)
+
+    # closing the figure
+    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='magenta',alpha=0.2,edgecolor='None')
+    
+    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+    matplotlib.pyplot.ylim([-5.,5.])
+    theXticks=range(boxPlotPosition)
+    theXticksPosition=[element+1 for element in theXticks]
+    theFontSize=int(600./len(listOfDescriptors))
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=14)
+    matplotlib.pyplot.ylabel('log2 fold')
+    matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
+    matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
+    matplotlib.pyplot.savefig('figuresGSE/boxplots_%s.trend.down.pdf'%flag)
+    matplotlib.pyplot.clf()
+
+   
+
+    return None
 
 def descriptorsFilter(descriptors,flag):
 
@@ -99,6 +215,9 @@ def descriptorsFilter(descriptors,flag):
         x=numpy.array(expressionA[geneID])
         y=numpy.array(expressionB[geneID])
 
+        # computing a relative separation: it should be larger than the average of the standard deviations of the two distributions
+        averageSD=0.5*numpy.std(x) + 0.5*numpy.std(y)
+
         # defining the separation
         if numpy.mean(x) > numpy.mean(y):
             separation=numpy.min(x)-numpy.max(y)
@@ -107,7 +226,7 @@ def descriptorsFilter(descriptors,flag):
         else:
             print 'error computing the separation between the two distributions from descriptorsFilter'
             sys.exit()
-        if separation > 0.:
+        if separation > averageSD:
             separations[geneID]=separation
 
     return separations
@@ -518,8 +637,14 @@ print
 # 1.3. plotting a boxplots of the best descriptors
 print 'plotting expression graphs for descriptors...'
 borders={}
-borders=boxPlotGrapher(diurnalFilteredDescriptors,borders,'diurnal')
-borders=boxPlotGrapher(growthFilteredDescriptors,borders,'growth')
+borders=bordersCalculator(diurnalFilteredDescriptors,borders,'diurnal')
+borders=bordersCalculator(growthFilteredDescriptors,borders,'growth')
+
+# 1.4. plotting the boxplots
+if boxplotPlotting == True:
+    print 'plotting expression graphs for descriptors...'
+    boxPlotGrapher(diurnalFilteredDescriptors,borders,'diurnal')
+    boxPlotGrapher(growthFilteredDescriptors,borders,'growth')
 
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
 print
