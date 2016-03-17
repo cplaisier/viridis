@@ -26,4 +26,4 @@ GSE_Mapper.py: script to map samples into diurnal and growth space from microarr
 
 #### misc
 logValuesMatrixCreator.py: script to transform absolute (FPKM) into relative expression (log2 fold change).
-
+cartoonFigureGenerator.py: script to generate a cartoon about the state space calculation.
