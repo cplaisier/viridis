@@ -784,7 +784,7 @@ def newSpaceMapper(flag):
     # aspect
     matplotlib.pyplot.tight_layout()
     matplotlib.pyplot.axes().set_aspect('equal')
-    #matplotlib.pyplot.subplots_adjust(left=0.21,right=0.79,bottom=0.17,top=0.93)
+    
     matplotlib.pyplot.savefig('figures/sampleLocation.%s.pdf'%(str(int(flag))))
     matplotlib.pyplot.clf()
     

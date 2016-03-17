@@ -1,14 +1,13 @@
-### this script locates all epochs samples into a light vs. growth space characterized in epoch=0
+### this script locates all epochs samples into a diurnal vs. growth space characterized in epoch=0, using microarray data
 
-import sys,numpy,matplotlib,random
+import sys,numpy,matplotlib,random,pickle
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
-from previousDescriptors import *
 
-def boxPlotGrapher(classifiers,borders,flag):
+def boxPlotGrapher(descriptors,borders,flag):
 
     '''
-    this function plots the expression of the classifiers in log10 scale using boxplots
+    this function plots the expression of the descriptors in log10 scale using boxplots
     '''
 
     # 0. defining a variable for recapitulating the data borders necessary for mapping samples into new space
@@ -16,11 +15,11 @@ def boxPlotGrapher(classifiers,borders,flag):
     
     # 1. defining the expression values
     if flag == 'diurnal':
-        expressionA=descriptorsExpressionRetriever(classifiers,flag,'light')
-        expressionB=descriptorsExpressionRetriever(classifiers,flag,'dark')           
+        expressionA=descriptorsExpressionRetriever(descriptors,flag,'light')
+        expressionB=descriptorsExpressionRetriever(descriptors,flag,'dark')           
     elif flag == 'growth':
-        expressionA=descriptorsExpressionRetriever(classifiers,flag,[1,2])
-        expressionB=descriptorsExpressionRetriever(classifiers,flag,[4,5])
+        expressionA=descriptorsExpressionRetriever(descriptors,flag,[1,2])
+        expressionB=descriptorsExpressionRetriever(descriptors,flag,[4,5])
     else:
         print flag
         print 'error handling flags from boxPlotGrapher'
@@ -28,8 +27,8 @@ def boxPlotGrapher(classifiers,borders,flag):
 
     # 3. plotting and recovering the info for the mapping samples
     boxPlotPosition=0
-    listOfClassifiers=sorted(classifiers,key=classifiers.__getitem__,reverse=True) # ranking the classifiers
-    for geneID in listOfClassifiers:
+    listOfDescriptors=sorted(descriptors,key=descriptors.__getitem__,reverse=True) # ranking the descriptors
+    for geneID in listOfDescriptors:
         boxPlotPosition=boxPlotPosition+1
         borders[flag][geneID]={}
         
@@ -52,7 +51,6 @@ def boxPlotGrapher(classifiers,borders,flag):
         else:
             center=((ya-xc)/2.)+xc
         # incorporating the data
-        #! w=weightRankCalculator(geneID,listOfClassifiers)
         w=weightNMLCalculator(geneID,flag)
         if flag == 'diurnal':
             borders[flag][geneID]=[xa,xb,xc,ya,yb,yc,center,w,sdx,sdy]
@@ -68,16 +66,15 @@ def boxPlotGrapher(classifiers,borders,flag):
         #matplotlib.pyplot.ylim([-0.2,5.])
         theXticks=range(boxPlotPosition)
         theXticksPosition=[element+1 for element in theXticks]
-        matplotlib.pyplot.xticks(theXticksPosition,listOfClassifiers,rotation=-90,fontsize=2)
+        matplotlib.pyplot.xticks(theXticksPosition,listOfDescriptors,rotation=-90,fontsize=2)
         matplotlib.pyplot.ylabel('log2 fold')
         matplotlib.pyplot.tight_layout(pad=2.5)
-        #! matplotlib.pyplot.subplots_adjust(left=0.05, right=0.99, top=0.95, bottom=0.33)
-        matplotlib.pyplot.savefig('boxplots_%s.pdf'%flag)
+        matplotlib.pyplot.savefig('figuresGSE/boxplots_%s.pdf'%flag)
         matplotlib.pyplot.clf()
 
     return borders
 
-def classifiersFilter(classifiers,flag):
+def descriptorsFilter(descriptors,flag):
 
     '''
     this function filters out descriptors
@@ -85,18 +82,18 @@ def classifiersFilter(classifiers,flag):
 
     # 1. defining the expression values
     if flag == 'diurnal':
-        expressionA=descriptorsExpressionRetriever(classifiers,flag,'light')
-        expressionB=descriptorsExpressionRetriever(classifiers,flag,'dark')        
+        expressionA=descriptorsExpressionRetriever(descriptors,flag,'light')
+        expressionB=descriptorsExpressionRetriever(descriptors,flag,'dark')        
     elif flag == 'growth':
-        expressionA=descriptorsExpressionRetriever(classifiers,flag,[1,2])
-        expressionB=descriptorsExpressionRetriever(classifiers,flag,[4,5])
+        expressionA=descriptorsExpressionRetriever(descriptors,flag,[1,2])
+        expressionB=descriptorsExpressionRetriever(descriptors,flag,[4,5])
     else:
         print 'error handling flags from boxPlotGrapher'
         sys.exit()
 
     # 2. computing the separations
     separations={}
-    for geneID in classifiers: 
+    for geneID in descriptors: 
         
         # 2.1 transforming into log10 scale
         x=numpy.array(expressionA[geneID])
@@ -108,25 +105,26 @@ def classifiersFilter(classifiers,flag):
         elif numpy.mean(y) > numpy.mean(x):
             separation=numpy.min(y)-numpy.max(x)
         else:
-            print 'error computing the separation between the two distributions from classifiersFilter'
+            print 'error computing the separation between the two distributions from descriptorsFilter'
             sys.exit()
         if separation > 0.:
             separations[geneID]=separation
 
     return separations
 
-def classifiersRetriever(flag):
+def descriptorsRetriever(flag):
 
     '''
     this function matches the previously found descriptors with the array data
     '''
-    
-    if flag == 'diurnal':
-        fpkmDescriptors=diurnalFPKMdescriptors
-    elif flag == 'growth':
-        fpkmDescriptors=growthFPKMdescriptors
 
-    listOfClassifiers=[]
+    jar=flag+'.pckl'
+    f=open(jar,'r')
+    fpkmDescriptors=pickle.load(f)
+    f.close()
+    print len(fpkmDescriptors),flag,'FPKM descriptors recovered.'
+
+    listOfDescriptors=[]
     for descriptor in fpkmDescriptors:
         for putative in expression.keys():
             if 'draft' in descriptor:
@@ -139,9 +137,9 @@ def classifiersRetriever(flag):
             else:
                 b=''
             if a == b:
-                listOfClassifiers.append(putative)
+                listOfDescriptors.append(putative)
 
-    return listOfClassifiers
+    return listOfDescriptors
 
 def expressionReader():
 
@@ -166,7 +164,7 @@ def expressionReader():
 
     return expression
 
-def descriptorsExpressionRetriever(classifiers,flag,condition):
+def descriptorsExpressionRetriever(descriptors,flag,condition):
 
     '''
     this function returns the expression values for a set of genes under a specific condition
@@ -186,7 +184,7 @@ def descriptorsExpressionRetriever(classifiers,flag,condition):
     print flag,condition,selectedSamples
     # 2. defining the expression values
     selectedExpression={}
-    for geneName in classifiers:
+    for geneName in descriptors:
         selectedExpression[geneName]=[]
         for sampleID in selectedSamples:
             value=expression[geneName][sampleID]
@@ -202,19 +200,19 @@ def loadCalculator(sampleID,flag):
 
     averageLoad=0.
     
-    for classifier in borders[flag].keys():
-        s=expression[classifier][sampleID] # sample expression level
+    for descriptor in borders[flag].keys():
+        s=expression[descriptor][sampleID] # sample expression level
 
-        a=borders[flag][classifier][0] # min of positive
-        b=borders[flag][classifier][1] # median of positive
-        c=borders[flag][classifier][2] # max of positive
+        a=borders[flag][descriptor][0] # min of positive
+        b=borders[flag][descriptor][1] # median of positive
+        c=borders[flag][descriptor][2] # max of positive
 
-        d=borders[flag][classifier][3] # min of negative
-        e=borders[flag][classifier][4] # median of negative
-        f=borders[flag][classifier][5] # max of negative
+        d=borders[flag][descriptor][3] # min of negative
+        e=borders[flag][descriptor][4] # median of negative
+        f=borders[flag][descriptor][5] # max of negative
 
-        NML=borders[flag][classifier][6] # No Man's Land
-        w=borders[flag][classifier][7] # weight
+        NML=borders[flag][descriptor][6] # No Man's Land
+        w=borders[flag][descriptor][7] # weight
         
         # differentiate if it's positive (AM,exp) or negative (PM,sta) or miss-regulated
         positive=None
@@ -347,7 +345,7 @@ def metadataReader():
 def newCoordinateCalculator(sampleID):
 
     '''
-    this function computes the new coordinates of a sample given the borders calculated from the filtered classifiers
+    this function computes the new coordinates of a sample given the borders calculated from the filtered descriptors
     '''
 
     x=-loadCalculator(sampleID,'diurnal')
@@ -396,30 +394,47 @@ def newSpaceMapper(flag):
     matplotlib.pyplot.ylim([-2.,2.])
     matplotlib.pyplot.xticks([-1.5,1.5],['light','dark'],fontsize=24)
     matplotlib.pyplot.yticks([-1.5,1.5],['late','early'],fontsize=24)
-    matplotlib.pyplot.xlabel('diurnal phase',fontsize=24)
+    matplotlib.pyplot.xlabel('diurnal cycle',fontsize=24)
     matplotlib.pyplot.ylabel('growth phase',fontsize=24)
-    matplotlib.pyplot.tight_layout(pad=2.5)
+    matplotlib.pyplot.title(str(flag)+' ppm',fontsize=28)
 
     # defining health zones
-    matplotlib.pyplot.plot([-2,-1],[1,1],color='black')
-    matplotlib.pyplot.plot([-1,-1],[1,2],color='black')
+    matplotlib.pyplot.plot([-2,-1],[1,1],color='black',alpha=0.2)
+    matplotlib.pyplot.plot([-1,-1],[1,2],color='black',alpha=0.2)
 
-    matplotlib.pyplot.plot([2,1],[1,1],color='black')
-    matplotlib.pyplot.plot([1,1],[1,2],color='black')
+    matplotlib.pyplot.plot([2,1],[1,1],color='black',alpha=0.2)
+    matplotlib.pyplot.plot([1,1],[1,2],color='black',alpha=0.2)
 
-    matplotlib.pyplot.plot([2,1],[-1,-1],color='black')
-    matplotlib.pyplot.plot([1,1],[-1,-2],color='black')
+    matplotlib.pyplot.plot([2,1],[-1,-1],color='black',alpha=0.2)
+    matplotlib.pyplot.plot([1,1],[-1,-2],color='black',alpha=0.2)
 
-    matplotlib.pyplot.plot([-2,-1],[-1,-1],color='black')
-    matplotlib.pyplot.plot([-1,-1],[-1,-2],color='black')
+    matplotlib.pyplot.plot([-2,-1],[-1,-1],color='black',alpha=0.2)
+    matplotlib.pyplot.plot([-1,-1],[-1,-2],color='black',alpha=0.2)
+
+    # defining the grid lines
+    matplotlib.pyplot.plot([-1.5,-1.5],[1,2],color='black',ls=':',alpha=0.4)
+    matplotlib.pyplot.plot([-2,-1],[1.5,1.5],color='black',ls=':',alpha=0.4)
+
+    matplotlib.pyplot.plot([-1.5,-1.5],[-1,-2],color='black',ls=':',alpha=0.4)
+    matplotlib.pyplot.plot([-2,-1],[-1.5,-1.5],color='black',ls=':',alpha=0.4)
+
+    matplotlib.pyplot.plot([1.5,1.5],[-1,-2],color='black',ls=':',alpha=0.4)
+    matplotlib.pyplot.plot([2,1],[-1.5,-1.5],color='black',ls=':',alpha=0.4)
+
+    matplotlib.pyplot.plot([1.5,1.5],[1,2],color='black',ls=':',alpha=0.4)
+    matplotlib.pyplot.plot([2,1],[1.5,1.5],color='black',ls=':',alpha=0.4)
 
     # defining the misregulation zone
-    matplotlib.pyplot.plot([-1,-1],[-1,1],color='red',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([-1,1],[1,1],color='red',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([1,1],[1,-1],color='red',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([-1,1],[-1,-1],color='red',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([-1,-1],[-1,1],color='magenta',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([-1,1],[1,1],color='magenta',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([1,1],[1,-1],color='magenta',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([-1,1],[-1,-1],color='magenta',alpha=0.5,lw=2.)
 
-    matplotlib.pyplot.savefig('sampleLocation.%s.pdf'%str(flag))
+    # aspect
+    matplotlib.pyplot.tight_layout()
+    matplotlib.pyplot.axes().set_aspect('equal')
+
+    matplotlib.pyplot.savefig('figuresGSE/sampleLocation.%s.pdf'%str(flag))
     matplotlib.pyplot.clf()
        
     return None
@@ -431,7 +446,7 @@ def setBoxColors(bp,theColor):
     '''
 
     matplotlib.pyplot.setp(bp['boxes'],color=theColor)
-    matplotlib.pyplot.setp(bp['caps'],color=theColor)
+    matplotlib.pyplot.setp(bp['caps'],color='None')
     matplotlib.pyplot.setp(bp['whiskers'],color=theColor,ls='-')
     matplotlib.pyplot.setp(bp['fliers'],markeredgecolor=theColor,marker='+')
     matplotlib.pyplot.setp(bp['medians'],color=theColor)    
@@ -441,15 +456,15 @@ def setBoxColors(bp,theColor):
 def weightNMLCalculator(geneID,flag):
 
     '''
-    this function computes the weight of the classifier based on the empty space between the classifiers
+    this function computes the weight of the descriptor based on the empty space between the descriptors
     '''
 
     if flag == 'diurnal':
-        sumSpaces=sum(diurnalFilteredClassifiers.values())
-        value=diurnalFilteredClassifiers[geneID]
+        sumSpaces=sum(diurnalFilteredDescriptors.values())
+        value=diurnalFilteredDescriptors[geneID]
     elif flag == 'growth':
-        sumSpaces=sum(growthFilteredClassifiers.values())
-        value=growthFilteredClassifiers[geneID]
+        sumSpaces=sum(growthFilteredDescriptors.values())
+        value=growthFilteredDescriptors[geneID]
     else:
         print 'error from weightNMLCalculator'
         sys.exit()
@@ -463,11 +478,14 @@ def weightNMLCalculator(geneID,flag):
 # use the points defined in day 1 and use the gap as unit of measurement. rank equal weights.
 
 # 0. preliminaries
+print
+print 'welcome to GSE_Mapper'
+print
 print 'initializing variables...'
 
 # 0.1. user defined variables and paths
 expressionFile='../data/GSE45252_value_Matrix.txt'
-boxplotPlotting=False
+boxplotPlotting=True
 
 # 0.2. reading metadata
 metaData=metadataReader()
@@ -478,33 +496,39 @@ expression=expressionReader()
 # 1. define descriptors
 
 # 1.1. recover descriptors
+print
 print 'recovering descriptors...'
 
-diurnalClassifiers=classifiersRetriever('diurnal')
-growthClassifiers=classifiersRetriever('growth')
+diurnalDescriptors=descriptorsRetriever('diurnal')
+growthDescriptors=descriptorsRetriever('growth')
+print
+print len(diurnalDescriptors),'diurnal descriptors found after annotation check.'
+print len(growthDescriptors),'growth descriptors found after annotation check.'
 
-print len(diurnalClassifiers),'light descriptors found.'
-print len(growthClassifiers),'growth descriptors found.'
+# 1.2. filtering the descriptors based on separation
+print
+print 'filtering descriptors based on separation...'
 
-# 1.2. filtering the classifiers based on separation
-print 'filtering classifiers based on separation...'
+diurnalFilteredDescriptors=descriptorsFilter(diurnalDescriptors,'diurnal')
+growthFilteredDescriptors=descriptorsFilter(growthDescriptors,'growth')
+print len(diurnalFilteredDescriptors),'filtered diurnal descriptors.'
+print len(growthFilteredDescriptors),'filtered growth descriptors.'
+print
 
-diurnalFilteredClassifiers=classifiersFilter(diurnalClassifiers,'diurnal')
-growthFilteredClassifiers=classifiersFilter(growthClassifiers,'growth')
-print len(diurnalFilteredClassifiers),'filtered light classifiers.'
-print len(growthFilteredClassifiers),'filtered growth classifiers.'
-
-# 1.3. plotting a boxplots of the best classifiers
-print 'plotting expression graphs for classifiers...'
+# 1.3. plotting a boxplots of the best descriptors
+print 'plotting expression graphs for descriptors...'
 borders={}
-borders=boxPlotGrapher(diurnalFilteredClassifiers,borders,'diurnal')
-borders=boxPlotGrapher(growthFilteredClassifiers,borders,'growth')
+borders=boxPlotGrapher(diurnalFilteredDescriptors,borders,'diurnal')
+borders=boxPlotGrapher(growthFilteredDescriptors,borders,'growth')
 
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
+print
 print 'mapping samples into new space...'
 newSpaceMapper(400)
+print
 newSpaceMapper(800)
 
 # 4. final message
+print
 print '... analysis completed.'
-        
+print        
