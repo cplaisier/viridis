@@ -105,9 +105,15 @@ def boxPlotGrapher(descriptors,borders,flag):
         logy=numpy.log10(y)
 
         bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-        setBoxColors(bp,'orange')
+        if flag == 'diurnal':
+            setBoxColors(bp,'orange')
+        else:
+            setBoxColors(bp,'#0571b0')
         bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-        setBoxColors(bp,'darkgreen')
+        if flag == 'diurnal':
+            setBoxColors(bp,'darkgreen')
+        else:
+            setBoxColors(bp,'#ca0020')
 
         name=geneID.split('Thaps')[1]
         names.append(name)
@@ -152,15 +158,21 @@ def boxPlotGrapher(descriptors,borders,flag):
             borA.append(xa); borB.append(yc)
             
             bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-            setBoxColors(bp,'orange')
+            if flag == 'diurnal':
+                setBoxColors(bp,'orange')
+            else:
+                setBoxColors(bp,'#0571b0')
             bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-            setBoxColors(bp,'darkgreen')
+            if flag == 'diurnal':
+                setBoxColors(bp,'darkgreen')
+            else:
+                setBoxColors(bp,'#ca0020')
 
             name=geneID.split('Thaps')[1]
             names.append(name)
 
     # closing the figure
-    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='magenta',alpha=0.2,edgecolor='None')
+    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='black',alpha=0.2,edgecolor='None')
     
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
     matplotlib.pyplot.ylim([-0.2,5.])
@@ -169,12 +181,18 @@ def boxPlotGrapher(descriptors,borders,flag):
     theFontSize=int(600./len(names))
     if flag == 'diurnal':
         matplotlib.pyplot.ylim([-0.1,4.25])
+        matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
+        matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
+        matplotlib.pyplot.legend()
+        theFontSize=14
     else:
         matplotlib.pyplot.ylim([-0.1,4.75])
-    matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
-    matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
-    matplotlib.pyplot.legend()
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=14)
+        matplotlib.pyplot.plot([-1],[-1],color='#0571b0',lw=2,label='early')
+        matplotlib.pyplot.plot([-1],[-1],color='#ca0020',lw=2,label='late')
+        matplotlib.pyplot.legend()
+        theFontSize=int(600./len(names))
+    
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=2.5)
     matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
@@ -206,29 +224,40 @@ def boxPlotGrapher(descriptors,borders,flag):
             borA.append(xc); borB.append(ya)
             
             bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-            setBoxColors(bp,'orange')
+            if flag == 'diurnal':
+                setBoxColors(bp,'orange')
+            else:
+                setBoxColors(bp,'#0571b0')
             bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-            setBoxColors(bp,'darkgreen')
+            if flag == 'diurnal':
+                setBoxColors(bp,'darkgreen')
+            else:
+                setBoxColors(bp,'#ca0020')
             
             name=geneID.split('Thaps')[1]
             names.append(name)
 
     # closing the figure
-    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='magenta',alpha=0.2,edgecolor='None')
+    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='black',alpha=0.2,edgecolor='None')
     
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
     matplotlib.pyplot.ylim([-0.2,5.])
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
-    theFontSize=int(600./len(names))
     if flag == 'diurnal':
         matplotlib.pyplot.ylim([-0.1,4.25])
+        matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
+        matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
+        matplotlib.pyplot.legend()
+        theFontSize=14
     else:
         matplotlib.pyplot.ylim([-0.1,4.75])
-    matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
-    matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
-    matplotlib.pyplot.legend()
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=14)
+        matplotlib.pyplot.plot([-1],[-1],color='#0571b0',lw=2,label='early')
+        matplotlib.pyplot.plot([-1],[-1],color='#ca0020',lw=2,label='late')
+        matplotlib.pyplot.legend()
+        theFontSize=int(600./len(names))
+        
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
     matplotlib.pyplot.ylabel('log10 FPKM')
     matplotlib.pyplot.tight_layout(pad=2.5)
     matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
@@ -774,10 +803,10 @@ def newSpaceMapper(flag):
     matplotlib.pyplot.plot([2,1],[1.5,1.5],color='black',ls=':',alpha=0.4)
 
     # defining the misregulation zone
-    matplotlib.pyplot.plot([-1,-1],[-1,1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([-1,1],[1,1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([1,1],[1,-1],color='magenta',alpha=0.5,lw=2.)
-    matplotlib.pyplot.plot([-1,1],[-1,-1],color='magenta',alpha=0.5,lw=2.)
+    matplotlib.pyplot.plot([-1,-1],[-1,1],color='black',alpha=0.7,lw=2.)
+    matplotlib.pyplot.plot([-1,1],[1,1],color='black',alpha=0.7,lw=2.)
+    matplotlib.pyplot.plot([1,1],[1,-1],color='black',alpha=0.7,lw=2.)
+    matplotlib.pyplot.plot([-1,1],[-1,-1],color='black',alpha=0.7,lw=2.)
 
     # aspect
     matplotlib.pyplot.tight_layout()
@@ -940,7 +969,7 @@ cuffdiffDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoint
 expressionFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/allSamples/genes.fpkm_table.v2.txt'
 metaDataFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/metadata/metadata.v2.tsv'
 
-boxplotPlotting=False
+boxplotPlotting=True
 time300=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75])
 time1000=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75,15.45833333,15.79166667,17.41666667,17.79166667])
 
