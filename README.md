@@ -1,6 +1,16 @@
 # viridis
-Tools for quantifying gene expression in diatoms.  
-    
+Tools for quantitative analysis of diatom tipping points.  
+
+### Growth Analysis
+
+library.py: library containing the common functions, including the fitting functions.  
+timeSeriesFitter.py: script to fit each time series individually with the purpose of manually checking the goodness of fit.  
+epochGrapher.py: script to generate the epoch figures for each condition.  
+nicheBreadthGrapher.py: script to generate the niche breadth increase based on maximum growth.  
+tippingPointTransitionGrapher.py: script to generate the tipping point transition based on growth lag and carrying capacity. 
+
+### Transcriptome Analysis
+
 The natural order for the analysis would follow as:   
 
 #### cleaning reads
