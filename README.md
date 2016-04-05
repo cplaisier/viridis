@@ -1,5 +1,5 @@
 # viridis
-Tools for quantitative analysis of diatom tipping points.  
+Tools for quantitative analyses of diatom resilience.  
 
 ## Growth Analysis
 
