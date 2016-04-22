@@ -3,6 +3,7 @@
 import sys,numpy,matplotlib,random,pickle
 from matplotlib import pyplot
 from matplotlib.patches import Ellipse
+matplotlib.rcParams['pdf.fonttype']=42 # this cryptical line is necessary for Illustrator compatibility of text saved as pdf
 
 def addArrows():
 
@@ -89,122 +90,36 @@ def boxPlotGrapher(descriptors,borders,flag):
 
     listOfDescriptors=sorted(descriptors,key=descriptors.__getitem__,reverse=True) # ranking the descriptors
     
-    # f.1. computing the general figure of boxplots with all descriptors
-    boxPlotPosition=0
-    names=[]
-    for geneID in listOfDescriptors:
-        boxPlotPosition=boxPlotPosition+1
-        
-        x=numpy.array(expressionA[geneID])
-        y=numpy.array(expressionB[geneID])
-
-        x=x+1.
-        y=y+1.
-
-        logx=numpy.log10(x)
-        logy=numpy.log10(y)
-
-        bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-        if flag == 'diurnal':
-            setBoxColors(bp,'orange')
-        else:
-            setBoxColors(bp,'#0571b0')
-        bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-        if flag == 'diurnal':
-            setBoxColors(bp,'darkgreen')
-        else:
-            setBoxColors(bp,'#ca0020')
-
-        name=geneID.split('Thaps')[1]
-        names.append(name)
-
-    # closing the figure
-    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
-    matplotlib.pyplot.ylim([-0.2,5.])
-    theXticks=range(boxPlotPosition)
-    theXticksPosition=[element+1 for element in theXticks]
-    theFontSize=int(600./len(listOfDescriptors))
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
-    matplotlib.pyplot.ylabel('log10 FPKM')
-    matplotlib.pyplot.tight_layout(pad=2.5)
-    matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
-    matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
-    matplotlib.pyplot.savefig('figures/boxplots_%s.pdf'%flag)
-    matplotlib.pyplot.clf()
-
-    # f.2. computing the figures for specific AM/exp or PM/sta descriptors
-
+    # f.1. computing the figures for specific AM/exp or PM/sta descriptors
     # AM/exp
-    boxPlotPosition=0
-    names=[]
-    borA=[]
-    borB=[]
-    for geneID in listOfDescriptors:
-        
-        x=numpy.array(expressionA[geneID])
-        y=numpy.array(expressionB[geneID])
-
-        x=x+1.
-        y=y+1.
-
-        logx=numpy.log10(x)
-        logy=numpy.log10(y)
-
-        xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
-        ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy); sdy=numpy.std(logy)
-
-        if xb > yb:
-            boxPlotPosition=boxPlotPosition+1
-            borA.append(xa); borB.append(yc)
-            
-            bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-            if flag == 'diurnal':
-                setBoxColors(bp,'orange')
-            else:
-                setBoxColors(bp,'#0571b0')
-            bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-            if flag == 'diurnal':
-                setBoxColors(bp,'darkgreen')
-            else:
-                setBoxColors(bp,'#ca0020')
-
-            name=geneID.split('Thaps')[1]
-            names.append(name)
-
-    # closing the figure
-    matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='black',alpha=0.2,edgecolor='None')
-    
-    matplotlib.pyplot.xlim([0,boxPlotPosition+1])
-    matplotlib.pyplot.ylim([-0.2,5.])
-    theXticks=range(boxPlotPosition)
-    theXticksPosition=[element+1 for element in theXticks]
-    theFontSize=int(600./len(names))
-    if flag == 'diurnal':
-        matplotlib.pyplot.ylim([-0.1,4.25])
-        matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
-        matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
-        matplotlib.pyplot.legend()
-        theFontSize=14
-    else:
-        matplotlib.pyplot.ylim([-0.1,4.75])
-        matplotlib.pyplot.plot([-1],[-1],color='#0571b0',lw=2,label='early')
-        matplotlib.pyplot.plot([-1],[-1],color='#ca0020',lw=2,label='late')
-        matplotlib.pyplot.legend()
-        theFontSize=int(600./len(names))
-    
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
-    matplotlib.pyplot.ylabel('log10 FPKM')
-    matplotlib.pyplot.tight_layout(pad=2.5)
-    matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
-    matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
-    matplotlib.pyplot.savefig('figures/boxplots_%s.trend.up.pdf'%flag)
-    matplotlib.pyplot.clf()
+    trend='AM-exp'
+    boxPlotMaker(listOfDescriptors,expressionA,expressionB,flag,trend)
 
     # PM/sta
+    trend='PM-sta'
+    boxPlotMaker(listOfDescriptors,expressionA,expressionB,flag,trend)
+
+    return None
+
+def boxPlotMaker(listOfDescriptors,expressionA,expressionB,flag,trend):
+
+    '''
+    this function builds the figure for the distribution of the descriptors
+    '''
+
     boxPlotPosition=0
     names=[]
+    figureCount=0
     borA=[]
     borB=[]
+
+    if flag == 'diurnal':
+        optimalRange=36
+        optimalFontSize=15
+    else:
+        optimalRange=38
+        optimalFontSize=13
+    
     for geneID in listOfDescriptors:
         
         x=numpy.array(expressionA[geneID])
@@ -219,50 +134,105 @@ def boxPlotGrapher(descriptors,borders,flag):
         xa=numpy.min(logx); xb=numpy.median(logx); xc=numpy.max(logx); sdx=numpy.std(logx)
         ya=numpy.min(logy); yb=numpy.median(logy); yc=numpy.max(logy); sdy=numpy.std(logy)
 
-        if xb < yb:
-            boxPlotPosition=boxPlotPosition+1
-            borA.append(xc); borB.append(ya)
-            
-            bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
-            if flag == 'diurnal':
-                setBoxColors(bp,'orange')
-            else:
-                setBoxColors(bp,'#0571b0')
-            bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
-            if flag == 'diurnal':
-                setBoxColors(bp,'darkgreen')
-            else:
-                setBoxColors(bp,'#ca0020')
-            
-            name=geneID.split('Thaps')[1]
-            names.append(name)
+        if trend == 'AM-exp':
+             if xb > yb:
+                boxPlotPosition=boxPlotPosition+1
+                borA.append(xa); borB.append(yc)
 
-    # closing the figure
+                bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
+                if flag == 'diurnal':
+                    setBoxColors(bp,'orange')
+                else:
+                    setBoxColors(bp,'#0571b0')
+                bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
+                if flag == 'diurnal':
+                    setBoxColors(bp,'darkgreen')
+                else:
+                    setBoxColors(bp,'#ca0020')
+
+                name=geneID.split('Thaps')[1]
+                names.append(name)
+                
+        elif trend == 'PM-sta':
+            if xb < yb:
+                boxPlotPosition=boxPlotPosition+1
+                borA.append(xc); borB.append(ya)
+
+                bp=matplotlib.pyplot.boxplot([logx],positions=[boxPlotPosition],patch_artist=True)
+                if flag == 'diurnal':
+                    setBoxColors(bp,'orange')
+                else:
+                    setBoxColors(bp,'#0571b0')
+                bp=matplotlib.pyplot.boxplot([logy],positions=[boxPlotPosition],patch_artist=True)
+                if flag == 'diurnal':
+                    setBoxColors(bp,'darkgreen')
+                else:
+                    setBoxColors(bp,'#ca0020')
+
+                name=geneID.split('Thaps')[1]
+                names.append(name)
+        else:
+            print 'error from boxPlotMaker about trend selection. Exiting...'
+            sys.exit()
+
+        # closing figure because of number of descriptors
+        if boxPlotPosition >= optimalRange:
+            matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='black',alpha=0.2,edgecolor='None')
+            
+            matplotlib.pyplot.xlim([0,boxPlotPosition+1])
+            matplotlib.pyplot.ylim([-0.2,5.])
+            theXticks=range(boxPlotPosition)
+            theXticksPosition=[element+1 for element in theXticks]
+            matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=optimalFontSize)
+            matplotlib.pyplot.yticks(fontsize=optimalFontSize)
+            matplotlib.pyplot.ylabel('log$_{10}$ FPKM',fontsize=optimalFontSize)
+            matplotlib.pyplot.tight_layout(pad=2.5)
+            matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
+            matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
+            
+            if flag == 'diurnal':
+                matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
+                matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
+            else:
+                matplotlib.pyplot.plot([-1],[-1],color='#0571b0',lw=2,label='early')
+                matplotlib.pyplot.plot([-1],[-1],color='#ca0020',lw=2,label='late')
+            matplotlib.pyplot.legend(fontsize=optimalFontSize)
+
+            figureName='figures/boxplots.%s.%s.%s.pdf'%(flag,trend,int(figureCount))
+            matplotlib.pyplot.savefig(figureName)
+            
+            matplotlib.pyplot.clf()
+
+            boxPlotPosition=0
+            names=[]
+            figureCount=figureCount+1
+            borA=[]
+            borB=[]
+
+    # final closing of figure
     matplotlib.pyplot.fill_between(range(1,len(names)+1),borA,borB,facecolor='black',alpha=0.2,edgecolor='None')
     
     matplotlib.pyplot.xlim([0,boxPlotPosition+1])
     matplotlib.pyplot.ylim([-0.2,5.])
     theXticks=range(boxPlotPosition)
     theXticksPosition=[element+1 for element in theXticks]
-    if flag == 'diurnal':
-        matplotlib.pyplot.ylim([-0.1,4.25])
-        matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
-        matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
-        matplotlib.pyplot.legend()
-        theFontSize=14
-    else:
-        matplotlib.pyplot.ylim([-0.1,4.75])
-        matplotlib.pyplot.plot([-1],[-1],color='#0571b0',lw=2,label='early')
-        matplotlib.pyplot.plot([-1],[-1],color='#ca0020',lw=2,label='late')
-        matplotlib.pyplot.legend()
-        theFontSize=int(600./len(names))
-        
-    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=theFontSize)
-    matplotlib.pyplot.ylabel('log10 FPKM')
+    matplotlib.pyplot.xticks(theXticksPosition,names,rotation=90,fontsize=optimalFontSize)
+    matplotlib.pyplot.yticks(fontsize=optimalFontSize)
+    matplotlib.pyplot.ylabel('log$_{10}$ FPKM',fontsize=optimalFontSize)
     matplotlib.pyplot.tight_layout(pad=2.5)
     matplotlib.pyplot.tick_params(axis='x',which='both',top='off')
     matplotlib.pyplot.tick_params(axis='y',which='both',right='off')
-    matplotlib.pyplot.savefig('figures/boxplots_%s.trend.down.pdf'%flag)
+
+    if flag == 'diurnal':
+        matplotlib.pyplot.plot([-1],[-1],color='orange',lw=2,label='light')
+        matplotlib.pyplot.plot([-1],[-1],color='darkgreen',lw=2,label='dark')
+    else:
+        matplotlib.pyplot.plot([-1],[-1],color='#0571b0',lw=2,label='early')
+        matplotlib.pyplot.plot([-1],[-1],color='#ca0020',lw=2,label='late')
+    matplotlib.pyplot.legend(fontsize=optimalFontSize)
+            
+    figureName='figures/boxplots.%s.%s.%s.pdf'%(flag,trend,int(figureCount))
+    matplotlib.pyplot.savefig(figureName)
     matplotlib.pyplot.clf()
 
     return None
@@ -368,19 +338,27 @@ def descriptorsWriter(selected,flag):
     # f.2. adding the relative importance of each descriptor
     if flag == 'diurnal':
         f=open('descriptors/epoch0_diurnalDescriptors_ranked.txt','w')
+        header1='median expression light (FPKM)'
+        header2='median expression dark (FPKM)'
     elif flag == 'growth':
         f=open('descriptors/epoch0_growthDescriptors_ranked.txt','w')
+        header1='median expression early (FPKM)'
+        header2='median expression late (FPKM)'
 
     accW=0.
     rank=0
     allW=[]
-    f.write('#rank\tgeneID\tW\taccW\n')
+    
+    f.write('#rank\tgeneID\t%s\t%s\tweight\taccumulated weight\n'%(header1,header2))
     for element in sortedList:
         rank=rank+1
         localW=borders[flag][element][-3]
         accW=accW+localW
         allW.append(localW)
-        f.write('%s\t%s\t%.4f\t%.4f\n'%(rank,element,localW,accW))
+        expressionA=(10**(borders[flag][element][1]))-1.
+        expressionB=(10**(borders[flag][element][4]))-1.
+        
+        f.write('%s\t%s\t%.4f\t%.4f\t%.4f\t%.4f\n'%(rank,element,expressionA,expressionB,localW,accW))
     f.close()
 
     # f.3. making a plot of the distribution of weights
@@ -422,8 +400,6 @@ def distanceCalculator(sampleID):
     value=0.5*sepx+0.5*sepy
     #! value=numpy.sqrt(sepx**2+sepy**2)
     #! value=sepx
-
-    #try making each boxplot being one, total 3
 
     return value
 
@@ -500,6 +476,8 @@ def loadCalculator(sampleID,flag):
     '''
 
     averageLoad=0.
+    A=[]
+    W=[]
     
     for descriptor in borders[flag].keys():
         s=numpy.log10(expression[descriptor][sampleID]+1.) # sample expression level
@@ -606,7 +584,11 @@ def loadCalculator(sampleID,flag):
         term=w*value
         averageLoad=averageLoad+term
 
-    return averageLoad
+        # returning the full list of descriptors
+        A.append(value)
+        W.append(w)
+
+    return averageLoad,A,W
 
 def expressionRetriever(descriptors,flag,condition):
 
@@ -670,9 +652,12 @@ def newCoordinateCalculator(sampleID):
     this function computes the new coordinates of a sample given the borders calculated from the filtered descriptors
     '''
 
-    x=-loadCalculator(sampleID,'diurnal')
-    y=loadCalculator(sampleID,'growth')
-    
+    x,xA,xW=loadCalculator(sampleID,'diurnal')
+    y,yA,yW=loadCalculator(sampleID,'growth')
+
+    # converting to inverse values for figure representation
+    x=-x
+
     return x,y
 
 def newSpaceMapper(flag):
@@ -817,17 +802,64 @@ def newSpaceMapper(flag):
     
     return None
 
-def setBoxColors(bp,theColor):
+def newSpaceProbabilisticMapper(flag):
 
     '''
-    this function access the elements of a boxplot and colors them appropriately
+    this function plots the samples into a new space considering in a probabilistic way each of the descriptors
     '''
 
-    matplotlib.pyplot.setp(bp['boxes'],color=theColor)
-    matplotlib.pyplot.setp(bp['caps'],color='None')
-    matplotlib.pyplot.setp(bp['whiskers'],color=theColor,ls='-')
-    matplotlib.pyplot.setp(bp['fliers'],markeredgecolor=theColor,marker='+')
-    matplotlib.pyplot.setp(bp['medians'],color=theColor)    
+    preselectedSamples=[sampleID for sampleID in metaData.keys() if metaData[sampleID]['co2'] == int(flag)]
+    print 'selected ', len(preselectedSamples), 'samples for plotting on ',flag, 'condition.'
+
+    # starting the figure
+    epochT={}
+    epochGP={}
+    for sampleID in preselectedSamples:
+        for i in range(3):
+            
+            epochT[i]=[]
+            epochGP[i]=[]
+                
+
+        x,y=newCoordinateCalculator(sampleID)
+        P,Q,grid=probabilisticCoordinateCalculator(sampleID)
+
+        m=[]
+        for i in range(len(grid)):
+            v=[]
+            for j in range(len(grid)):
+                product=P[i]*Q[j]
+                #if product == 0.:
+                #    product=float('nan')
+
+                v.append(product)
+            m.append(v)
+        m=numpy.array(m)
+        t=numpy.transpose(m)
+
+        print numpy.max(t)
+
+        # plotting the figure
+        gridPosition=[20+x*10,20+y*10]
+        matplotlib.pyplot.imshow(t,interpolation='none',cmap='Blues',origin='lower',extent=(0,40,0,40)) # kaiser is a good interpolation
+        matplotlib.pyplot.plot(gridPosition[0],gridPosition[1],'o',color='red',mew=0.)
+        matplotlib.pyplot.hold(True)
+
+    # setting ranges and labels
+    matplotlib.pyplot.xlim([0,40.])
+    matplotlib.pyplot.ylim([0,40.])
+    matplotlib.pyplot.xlabel('diurnal cycle',fontsize=24)
+    matplotlib.pyplot.ylabel('growth phase',fontsize=24)
+
+    # aspect
+    matplotlib.pyplot.tight_layout()
+    matplotlib.pyplot.axes().set_aspect('equal')
+    
+    
+    matplotlib.pyplot.savefig('figures/sampleLocation.prob.%s.png'%(str(int(flag))))
+    matplotlib.pyplot.clf()
+
+    sys.exit()
 
     return None
 
@@ -928,6 +960,87 @@ def oneDimensionTimeMapper():
 
     return None
 
+def probabilisticCoordinateCalculator(sampleID):
+
+    '''
+    this function computes a new list of coordinates (probabilistic) of a sample given for each of the descriptors
+    '''
+
+    x,xA,xW=loadCalculator(sampleID,'diurnal')
+    y,yA,yW=loadCalculator(sampleID,'growth')
+
+    # converting to inverse values for figure representation
+    x=-x
+    xA=[-element for element in xA]
+
+    # converting descriptors scores into probability distributions
+    P,xGrid=probabilityDistributionCalculator(xA,xW,sampleID,'diurnal')
+    Q,yGrid=probabilityDistributionCalculator(yA,yW,sampleID,'growth')
+
+    grid=xGrid
+    if len(xGrid) != len(yGrid):
+        print len(xGrid),len(yGrid)
+        print 'error communicating grid from probabilisticCoordinateCalculator function. Exiting...'
+        sys.exit()
+
+    return P,Q,grid
+
+def probabilityDistributionCalculator(positions,weights,sampleID,label):
+
+    '''
+    this function computes a probability distribution from a data sample
+    '''
+
+    # computing the histogram
+    p,z=weightedHistogrammer(positions,weights)
+
+    ### if plotting == True:
+    figureFile='densityFigures/'+sampleID+'.'+label+'.pdf'
+    matplotlib.pyplot.plot(z,p,'ok')
+    matplotlib.pyplot.xlim([-2.1,2.1])
+    matplotlib.pyplot.ylim([-0.05*max(p),max(p)+0.05*max(p)])
+    matplotlib.pyplot.xlabel('score')
+    matplotlib.pyplot.ylabel('pdf')
+    matplotlib.pyplot.savefig(figureFile)
+    matplotlib.pyplot.clf() 
+
+    return p,z
+
+def setBoxColors(bp,theColor):
+
+    '''
+    this function access the elements of a boxplot and colors them appropriately
+    '''
+
+    matplotlib.pyplot.setp(bp['boxes'],color=theColor)
+    matplotlib.pyplot.setp(bp['caps'],color='None')
+    matplotlib.pyplot.setp(bp['whiskers'],color=theColor,ls='-')
+    matplotlib.pyplot.setp(bp['fliers'],markeredgecolor=theColor,marker='+')
+    matplotlib.pyplot.setp(bp['medians'],color=theColor)    
+
+    return None
+
+def weightedHistogrammer(scores,scoresWeights):
+
+    '''
+    this function computes a weighted histogram of a probability density distribution
+    '''
+
+    n,bins=numpy.histogram(scores,weights=scoresWeights,bins=40,range=(-2.,2.))
+
+    z=[]
+    halfBin=(bins[1]-bins[0])/2.
+    for bin in bins:
+        center=bin+halfBin
+        z.append(center)
+    z.pop()
+
+    p=[]
+    p=numpy.array(n)
+    p=p/float(sum(p))
+
+    return p,z
+
 def weightProportionalCalculator(geneID,flag):
 
     '''
@@ -1024,6 +1137,12 @@ print 'mapping samples into new space...'
 newSpaceMapper('300')
 print
 newSpaceMapper('1000')
+
+# 3. map samples into a new space in a probability manner
+#print
+#print 'mapping samples into a probabilistic space...'
+#newSpaceProbabilisticMapper('300')
+#sys.exit()
 
 # 3. map samples into a 1D variable
 #print 'mapping samples into 1D space...'
