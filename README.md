@@ -27,6 +27,7 @@ cufflinksCaller.py: script to call cufflinks and quantify the mapped reads.
 
 #### finding differentially expressed transcripts  
 classifiersFinder.py: script that calls cuffdiff to find DETs between two conditions.  
+carbonFixationAnalyser.py: script that calls cuffdiff to find DETs between LC and HC for specific CCM transcripts.  
 
 #### visualizing samples
 samplesCorrelationGrapher.py: script to compute and plot the correlation among samples.  
