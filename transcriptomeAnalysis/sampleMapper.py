@@ -1,7 +1,10 @@
 ### this script locates all epochs samples into a diurnal vs. growth space characterized in epoch=0
 
-import sys,numpy,matplotlib,random,pickle
-from matplotlib import pyplot
+import sys,numpy,matplotlib,random,pickle,math
+import scipy.stats
+import matplotlib.pyplot
+#import matplotlib.patches.Ellipse
+#from matplotlib import pyplot
 from matplotlib.patches import Ellipse
 matplotlib.rcParams['pdf.fonttype']=42 # this cryptical line is necessary for Illustrator compatibility of text saved as pdf
 
@@ -237,6 +240,33 @@ def boxPlotMaker(listOfDescriptors,expressionA,expressionB,flag,trend):
 
     return None
 
+def coefficientOfVariationDistributionCalculator(workingSamples):
+
+    '''
+    this function returns the distribution of coefficient of variations for each set of descriptors, normalized by their weight
+    '''
+
+    distribution=[]
+    for dimension in borders.keys():
+        for descriptor in borders[dimension].keys():
+            w=borders[dimension][descriptor][7] # weight
+            v=[]
+            for sampleID in workingSamples:
+                s=numpy.log10(expression[descriptor][sampleID]+1.)
+                v.append(s)
+            if max(v) == 0.:
+                cv=0.
+            else:
+                cv=numpy.std(v)/numpy.mean(v)
+            distribution.append(cv)
+
+    # dealing with zero values and log transforming
+    lowerValue=min([element for element in distribution if element != 0.])
+    formattedDistribution=[lowerValue if (element == 0.) else element for element in distribution]
+    logDistribution=numpy.log10(formattedDistribution)
+
+    return logDistribution
+
 def descriptorsFilter(descriptors,flag):
 
     '''
@@ -378,10 +408,87 @@ def descriptorsWriter(selected,flag):
 
     return None
 
+def dispersionQuantifier(flag):
+
+    '''
+    this function quantifies the amount of dispersion along epochs, based on coefficient of variation
+    '''
+
+    co2level=int(flag)
+    # 1. walking along time
+    epochs=[0,1,2]
+    growths=['exp','sta']
+    diurnals=['AM','PM']
+
+    orderedSamples={}
+    time=0
+    timeLabels=[]
+    for epoch in epochs:
+        for growth in growths:
+            for diurnal in diurnals:
+                time=time+1
+                for sampleID in metaData.keys():
+                    if metaData[sampleID]['co2'] == co2level and metaData[sampleID]['epoch'] == epoch and metaData[sampleID]['growth'] == growth and metaData[sampleID]['diurnal'] == diurnal:
+
+                        timeLabel=diurnal+'.'+growth+'.'+str(epoch+1)
+                        if timeLabel not in timeLabels:
+                            timeLabels.append(timeLabel)
+                            
+                        if time in orderedSamples:
+                            orderedSamples[time].append(sampleID)
+                        else:
+                            orderedSamples[time]=[sampleID]
+
+    # compute CV values / entropy values
+    plottingDistributions=[]
+    plottingTimePoints=[]
+    for timepoint in orderedSamples.keys():
+        workingSamples=orderedSamples[timepoint]
+
+        distribution=coefficientOfVariationDistributionCalculator(workingSamples)
+        entropyValues=entropyFinder(workingSamples)
+
+        plottingTimePoints.append(timepoint)
+        plottingDistributions.append(distribution)
+
+    # plot
+    violinParts=matplotlib.pyplot.violinplot(plottingDistributions,plottingTimePoints,showmeans=True,showextrema=False)
+
+    colors=[]
+    for timeLabel in timeLabels:
+        if '.1' in timeLabel:
+            colors.append('blue')
+        elif '.2' in timeLabel:
+            colors.append('green')
+        elif '.3' in timeLabel:
+            colors.append('red')
+        else:
+            print 'error assigning violin colors. exiting...'
+            sys.exit()
+
+    for i in range(len(timeLabels)):
+        violinParts['bodies'][i].set_linewidths(None)
+        violinParts['bodies'][i].set_facecolor(colors[i])
+    violinParts['cmeans'].set_edgecolor('black')
+
+    matplotlib.pyplot.ylabel(r'log$_{10}$ CV')
+
+    matplotlib.pyplot.xticks(range(1,len(timeLabels)+1),timeLabels,rotation=-45)
+    matplotlib.pyplot.xlim([0.5,len(timeLabels)+0.5])
+
+    matplotlib.pyplot.tight_layout()
+    matplotlib.pyplot.axes().set_aspect('equal')
+
+    fileName='figure.%s.pdf'%(flag)
+    matplotlib.pyplot.savefig(fileName)
+    matplotlib.pyplot.clf()
+
+    return None
+
 def distanceCalculator(sampleID):
 
     '''
-    this function calculates a single value measure of misregulation
+    this function calculates a single value measure of lack or resilience
     '''
 
     diurnalLoad=loadCalculator(sampleID,'diurnal')
@@ -444,6 +551,44 @@ def ellipseSizeCalculator(flag1,flag2):
 
     return averageDispersion
 
+def entropyCalculator(v):
+
+    # calculating the probability distribution
+    n=len(v)
+    q1 = scipy.stats.scoreatpercentile(v,25)
+    q3 = scipy.stats.scoreatpercentile(v,75)
+    iqd = q3-q1
+    nterm=n**(-1./3.)
+    h=2.*iqd*nterm
+    k=int(math.ceil((max(v)-min(v))/h))
+
+    n,bins=numpy.histogram(v,bins=k)
+
+    y=[]
+    y=numpy.array(n)
+    y=y/float(sum(y))
+
+    s=scipy.stats.entropy(y)
+
+    return h
+
+def entropyFinder(workingSamples):
+
+    '''
+    this function computes the entropy of sample based on expression of the descriptors or the whole transcriptome
+    '''
+
+    H=[]
+    for sampleID in workingSamples:
+        e=[]
+        for geneID in expression.keys():
+            v=expression[geneID][sampleID]
+            e.append(numpy.log10(v+1.))
+        h=entropyCalculator(e)
+    sys.exit()
+        
+    return H
+
 def expressionReader():
 
     '''
@@ -468,6 +613,29 @@ def expressionReader():
                 expression[geneName][labels[i]]=values[i]
 
     return expression
+
+def expressionRetriever(descriptors,flag,condition):
+
+    '''
+    this function returns the expression values for a set of genes under a specific condition
+    '''
+
+    # 1. selecting the acceptable samples
+    selectedSamples=[]
+    for sampleID in metaData.keys():
+        if metaData[sampleID]['epoch'] == 0:
+            if metaData[sampleID][flag] == condition:
+                selectedSamples.append(sampleID)
+                
+    # 2. defining the expression values
+    selectedExpression={}
+    for geneName in descriptors:
+        selectedExpression[geneName]=[]
+        for sampleID in selectedSamples:
+            value=expression[geneName][sampleID]
+            selectedExpression[geneName].append(value)
+
+    return selectedExpression
 
 def loadCalculator(sampleID,flag):
 
@@ -589,29 +757,6 @@ def loadCalculator(sampleID,flag):
         W.append(w)
 
     return averageLoad,A,W
-
-def expressionRetriever(descriptors,flag,condition):
-
-    '''
-    this function returns the expression values for a set of genes under a specific condition
-    '''
-
-    # 1. selecting the acceptable samples
-    selectedSamples=[]
-    for sampleID in metaData.keys():
-        if metaData[sampleID]['epoch'] == 0:
-            if metaData[sampleID][flag] == condition:
-                selectedSamples.append(sampleID)
-                
-    # 2. defining the expression values
-    selectedExpression={}
-    for geneName in descriptors:
-        selectedExpression[geneName]=[]
-        for sampleID in selectedSamples:
-            value=expression[geneName][sampleID]
-            selectedExpression[geneName].append(value)
-
-    return selectedExpression
 
 def metadataReader():
 
@@ -1082,7 +1227,7 @@ cuffdiffDir='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoint
 expressionFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/cufflinks/allSamples/genes.fpkm_table.v2.txt'
 metaDataFile='/Volumes/omics4tb/alomana/projects/dtp/data/expression/tippingPoints/metadata/metadata.v2.tsv'
 
-boxplotPlotting=True
+boxplotPlotting=False
 time300=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75])
 time1000=numpy.array([1.375,1.625,3.375,3.708333333,5.291666667,5.708333333,7.333333333,7.75,15.45833333,15.79166667,17.41666667,17.79166667])
 
@@ -1132,11 +1277,20 @@ if boxplotPlotting == True:
     boxPlotGrapher(growthFilteredDescriptors,borders,'growth')
 
 # 2. map samples into a new space of dark/light distributed in x:-2:-1/1:2 and stationary/exponential y:-2:-1/1:2
+#print
+#print 'mapping samples into new space...'
+#newSpaceMapper('300')
+#print
+#newSpaceMapper('1000')
+
+# 3. generating plots of condition dispersion
 print
-print 'mapping samples into new space...'
-newSpaceMapper('300')
-print
-newSpaceMapper('1000')
+print 'computing dispersion...'
+dispersionQuantifier('300')
+dispersionQuantifier('1000')
+
+dispersionQuantifier2('300')
+dispersionQuantifier2('1000')
 
 # 3. map samples into a new space in a probability manner
 #print
